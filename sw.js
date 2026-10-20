@@ -2,8 +2,8 @@
    - Eigene Dateien: erst Netz (max. 4 s), sonst gespeicherte Version → Updates kommen sofort an
    - Bibliotheken/Schriften: aus dem Speicher
    - Supabase-Anfragen werden NICHT gespeichert (die App merkt sich die Getränke selbst, pro Benutzer) */
-const P="pegeltracker-",V=P+"v1";
-const CORE=['./','index.html','manifest.json','icon.svg'];
+const P="pegeltracker-",V=P+"v2";
+const CORE=['./','index.html','manifest.json','icon.svg','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','icons/favicon-32.png'];
 const EXTRA=["https://cdn.tailwindcss.com/3.4.16","https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js","https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js","https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"];
 const CDN=/fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.jsdelivr\.net|cdn\.tailwindcss\.com/;
 self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(V);await c.addAll(CORE);await Promise.allSettled(EXTRA.map(u=>c.add(u)));await self.skipWaiting();})());});

@@ -10,6 +10,7 @@ Nutzt das gemeinsame Supabase-Core-Projekt (Login und Profil wie TravelBase und 
 | `index.html` | die komplette App (Tailwind CSS, Chart.js, supabase-js über CDN) |
 | `supabase/pegeltracker_core.sql` | Tabellen, Zugriffsregeln und RPC im Core-Projekt |
 | `manifest.json`, `sw.js`, `icon.svg` | PWA: installierbar, App-Hülle offline verfügbar |
+| `icons/` | App-Icons (Startbildschirm, maskable, Apple, Favicon) |
 
 ## Einrichtung
 
