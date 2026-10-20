@@ -1,1 +1,799 @@
+<!DOCTYPE html>
+<html lang="de"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#d97706">
+    <script>(function(){try{if(localStorage.getItem('overall-theme')==='dark'){document.documentElement.classList.add('dark');}}catch(e){}})();</script>
+    <title>PegelTracker</title>
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="PegelTracker">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: {
+                fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] },
+                colors: { brand: { 50: '#fffbeb', 100: '#fef3c7', 300: '#fcd34d', 500: '#f59e0b', 600: '#d97706', 700: '#b45309' } }
+            } }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style type="text/tailwindcss">
+        [hidden] { display: none !important; }
+        body { -webkit-tap-highlight-color: transparent; }
+        .card { @apply bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm dark:shadow-none; }
+        .chip { @apply flex flex-col items-center justify-center gap-0.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-950 px-2 py-3 text-sm font-bold text-slate-800 dark:text-zinc-100 hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-zinc-800 active:scale-95 transition disabled:opacity-50; }
+        .inp { @apply w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-950 px-3 py-2.5 text-base text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-brand-500; }
+        .lbl { @apply flex flex-col gap-1 text-xs font-bold text-slate-500 dark:text-zinc-400; }
+        .btn { @apply rounded-xl bg-brand-600 px-4 py-2.5 font-extrabold text-white hover:bg-brand-700 disabled:opacity-60 dark:text-zinc-950 dark:bg-brand-500; }
+        .btn-ghost { @apply rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-bold text-slate-700 dark:text-zinc-200 hover:border-brand-500; }
+        .icon-btn { @apply rounded-xl border-2 border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-xl leading-none hover:border-brand-500; }
+        .tab { @apply flex-1 rounded-lg px-4 py-2 text-sm font-extrabold text-slate-500 dark:text-zinc-400; }
+        .tab[aria-selected="true"] { @apply bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm; }
+        .ms { @apply rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 p-3; }
+        .ms.done { @apply border-emerald-300 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40; }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-700 dark:bg-black dark:text-zinc-300 font-sans antialiased">
+<div class="mx-auto max-w-5xl px-4 pb-16">
 
+    <header class="sticky top-0 z-30 -mx-4 mb-5 flex items-center justify-between gap-3 border-b-4 border-brand-500 bg-slate-100/95 px-4 py-3 backdrop-blur dark:bg-black/95">
+        <div class="min-w-0">
+            <h1 class="truncate text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">🍻 PegelTracker</h1>
+            <div id="subline" class="truncate text-sm font-semibold text-slate-500 dark:text-zinc-400">Promille &amp; Koffein im Blick</div>
+        </div>
+        <div class="flex shrink-0 items-center gap-2">
+            <select id="personSel" class="inp !w-auto !py-1.5 text-sm font-bold" aria-label="Bereich wählen" hidden></select>
+            <button id="themeToggle" class="icon-btn" type="button" aria-label="Zum dunklen Modus wechseln">🌙</button>
+            <div class="relative">
+                <button id="meBtn" class="icon-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Mein Konto" hidden>👤</button>
+                <div id="meMenu" class="absolute right-0 top-12 z-40 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-zinc-700 dark:bg-zinc-900" role="menu" hidden>
+                    <div class="px-3 py-2"><b id="menuName" class="block text-slate-900 dark:text-white"></b><small id="menuMail" class="text-slate-500"></small></div>
+                    <a class="block rounded-lg px-3 py-2 font-semibold hover:bg-slate-100 dark:hover:bg-zinc-800" href="/konto.html?from=pegeltracker#app-pegeltracker" role="menuitem">⚙️ Kontoeinstellungen</a>
+                    <a id="adminLink" class="block rounded-lg px-3 py-2 font-semibold hover:bg-slate-100 dark:hover:bg-zinc-800" href="/admin.html?from=pegeltracker#app-pegeltracker" role="menuitem" hidden>🛡️ Admin-Einstellungen</a>
+                    <button id="logoutBtn" class="block w-full rounded-lg px-3 py-2 text-left font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40" type="button" role="menuitem">🚪 Abmelden</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="banner" class="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300" hidden></div>
+
+    <!-- ───────── Anmeldung ───────── -->
+    <section id="loginView" class="mx-auto max-w-md" hidden>
+        <div class="card">
+            <h2 class="mb-1 text-lg font-extrabold text-slate-900 dark:text-white">Anmelden</h2>
+            <p class="mb-4 text-sm text-slate-500">Gleiches Konto wie bei TravelBase und Questlog.</p>
+            <form id="loginForm" class="flex flex-col gap-3">
+                <label class="lbl">E-Mail<input id="loginMail" class="inp" type="email" autocomplete="email" required></label>
+                <label class="lbl">Passwort<input id="loginPw" class="inp" type="password" autocomplete="current-password" required></label>
+                <button class="btn" type="submit">Anmelden</button>
+                <button id="forgotBtn" class="self-start text-sm font-bold text-brand-600 hover:underline" type="button">Passwort vergessen?</button>
+                <div id="loginMsg" class="text-sm font-semibold" hidden></div>
+            </form>
+        </div>
+    </section>
+
+    <section id="noAccessView" class="mx-auto max-w-md" hidden>
+        <div class="card text-center">
+            <div class="text-4xl">🔒</div>
+            <h2 class="mt-2 text-lg font-extrabold text-slate-900 dark:text-white">Kein Zugang</h2>
+            <p class="mt-1 text-sm text-slate-500">Dein Konto ist für den PegelTracker noch nicht freigeschaltet.</p>
+        </div>
+    </section>
+
+    <!-- ───────── App ───────── -->
+    <main id="appView" hidden>
+        <div class="mb-5 flex gap-1 rounded-xl bg-slate-200 p-1 dark:bg-zinc-900" role="tablist">
+            <button class="tab" role="tab" data-tab="dash" aria-selected="true">📊 Dashboard</button>
+            <button class="tab" role="tab" data-tab="hist" aria-selected="false">📜 Historie</button>
+        </div>
+
+        <!-- Dashboard -->
+        <section id="dashView" class="grid gap-5 lg:grid-cols-5">
+            <div class="flex flex-col gap-5 lg:col-span-3">
+                <!-- aktueller Stand -->
+                <div class="card">
+                    <div class="flex flex-wrap items-end justify-between gap-4">
+                        <div>
+                            <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Aktueller Pegel</div>
+                            <div class="flex items-baseline gap-2">
+                                <span id="bacNow" class="text-6xl font-extrabold tabular-nums text-slate-900 dark:text-white">0,00</span>
+                                <span class="text-2xl font-bold text-slate-400">‰</span>
+                                <span id="bacTrend" class="text-xl font-bold"></span>
+                            </div>
+                            <div id="bacHint" class="mt-1 text-sm font-semibold text-slate-500">Keine laufende Session.</div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                            <span class="text-slate-500">Höchstwert</span><b id="statPeak" class="tabular-nums text-slate-900 dark:text-white">–</b>
+                            <span class="text-slate-500">Session seit</span><b id="statStart" class="tabular-nums text-slate-900 dark:text-white">–</b>
+                            <span class="text-slate-500">Getränke</span><b id="statCount" class="tabular-nums text-slate-900 dark:text-white">–</b>
+                            <span class="text-slate-500">Reiner Alkohol</span><b id="statGrams" class="tabular-nums text-slate-900 dark:text-white">–</b>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-3 dark:bg-zinc-950">
+                        <span class="text-2xl">☕</span>
+                        <div class="min-w-0 flex-1">
+                            <div class="text-sm font-bold text-slate-900 dark:text-white"><span id="cafNow">0</span> mg Koffein aktiv <span id="cafLevel" class="ml-1 rounded-full px-2 py-0.5 text-xs"></span></div>
+                            <div id="cafHint" class="text-xs text-slate-500">Heute insgesamt 0 mg (Richtwert max. 400 mg/Tag).</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Meilensteine -->
+                <div class="card">
+                    <h2 class="mb-3 font-extrabold text-slate-900 dark:text-white">⏱️ Meilensteine</h2>
+                    <div id="milestones" class="grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+                </div>
+
+                <!-- Chart -->
+                <div class="card">
+                    <div class="mb-2 flex items-center justify-between">
+                        <h2 class="font-extrabold text-slate-900 dark:text-white">📈 Verlauf</h2>
+                        <span class="text-xs text-slate-500">Promille (Linie) · Koffein (Fläche)</span>
+                    </div>
+                    <div class="relative h-72"><canvas id="liveChart"></canvas></div>
+                    <p id="chartEmpty" class="py-10 text-center text-sm text-slate-500" hidden>Sobald du etwas trinkst, erscheint hier der Verlauf.</p>
+                </div>
+
+                <!-- Getränke der Session -->
+                <div class="card">
+                    <h2 class="mb-3 font-extrabold text-slate-900 dark:text-white">🧾 Diese Session</h2>
+                    <ul id="sessionList" class="divide-y divide-slate-100 dark:divide-zinc-800"></ul>
+                </div>
+            </div>
+
+            <!-- Erfassung -->
+            <div class="lg:col-span-2">
+                <div id="entryCard" class="card lg:sticky lg:top-24">
+                    <h2 class="mb-3 font-extrabold text-slate-900 dark:text-white">➕ Neuer Eintrag</h2>
+
+                    <label class="mb-4 flex cursor-pointer items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-zinc-950">
+                        <span class="text-sm font-bold text-slate-800 dark:text-zinc-100">🍽️ Gute Essensgrundlage</span>
+                        <span class="relative inline-flex items-center">
+                            <input id="foodToggle" type="checkbox" class="peer sr-only">
+                            <span class="h-7 w-12 rounded-full bg-slate-300 transition peer-checked:bg-emerald-500 dark:bg-zinc-700"></span>
+                            <span class="absolute left-1 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5"></span>
+                        </span>
+                    </label>
+
+                    <label class="lbl mb-4">Zeitpunkt
+                        <input id="entryTime" class="inp" type="datetime-local">
+                    </label>
+
+                    <div class="mb-1 text-xs font-bold text-slate-500">Schnellwahl</div>
+                    <div id="quickBtns" class="mb-4 grid grid-cols-2 gap-2"></div>
+
+                    <div class="mb-1 text-xs font-bold text-slate-500">Standard-Getränke &amp; Koffein</div>
+                    <div class="mb-4 flex gap-2">
+                        <select id="stdSel" class="inp"></select>
+                        <button id="stdAdd" class="btn shrink-0" type="button">+</button>
+                    </div>
+
+                    <details class="rounded-xl border border-slate-200 p-3 dark:border-zinc-800">
+                        <summary class="cursor-pointer text-sm font-bold text-slate-800 dark:text-zinc-100">✍️ Manuelle Eingabe</summary>
+                        <form id="manualForm" class="mt-3 grid grid-cols-2 gap-3">
+                            <label class="lbl col-span-2">Bezeichnung<input id="mName" class="inp" type="text" maxlength="80" placeholder="z. B. Hausmarke Gin Tonic" required></label>
+                            <label class="lbl">Menge (Liter)<input id="mVol" class="inp" type="number" min="0.01" max="5" step="0.01" placeholder="0,2" required></label>
+                            <label class="lbl">Alkohol (Vol.-%)<input id="mAbv" class="inp" type="number" min="0" max="100" step="0.1" placeholder="12" required></label>
+                            <label class="lbl">Koffein (mg)<input id="mCaf" class="inp" type="number" min="0" max="2000" step="1" value="0"></label>
+                            <label class="lbl">Kategorie
+                                <select id="mCat" class="inp">
+                                    <option value="cocktail">Cocktail</option><option value="beer">Bier</option><option value="wine">Wein</option>
+                                    <option value="sparkling">Sekt</option><option value="shot">Shot</option><option value="spirit">Spirituose</option>
+                                    <option value="caffeine">Koffein</option><option value="other">Sonstiges</option>
+                                </select>
+                            </label>
+                            <label class="col-span-2 flex items-center gap-2 text-sm font-semibold"><input id="mSave" type="checkbox" class="h-4 w-4 accent-amber-600"> Als eigenes Getränk im Dropdown merken</label>
+                            <button class="btn col-span-2" type="submit">Eintragen</button>
+                        </form>
+                    </details>
+                    <div id="entryMsg" class="mt-3 rounded-lg px-3 py-2 text-sm font-semibold" hidden></div>
+                    <p class="mt-4 text-xs leading-relaxed text-slate-400">Schätzung nach Widmark/Watson. Nicht geeignet, um die Fahrtüchtigkeit zu beurteilen.</p>
+                </div>
+                <div id="readonlyCard" class="card text-sm" hidden>👀 Du siehst den Bereich von <b id="roName"></b>. Einträge kann nur die Person selbst machen.</div>
+            </div>
+        </section>
+
+        <!-- Historie -->
+        <section id="histView" hidden>
+            <div id="histList" class="grid gap-3 sm:grid-cols-2"></div>
+            <p id="histEmpty" class="card text-center text-sm text-slate-500" hidden>Noch keine abgeschlossenen Sessions.</p>
+        </section>
+    </main>
+</div>
+
+<!-- Detailansicht einer Session -->
+<dialog id="detailDlg" class="w-[min(640px,calc(100vw-2rem))] rounded-2xl bg-white p-0 text-slate-700 backdrop:bg-black/50 dark:bg-zinc-900 dark:text-zinc-300">
+    <div class="p-5">
+        <div class="mb-3 flex items-start justify-between gap-3">
+            <div>
+                <h2 id="dTitle" class="text-lg font-extrabold text-slate-900 dark:text-white"></h2>
+                <div id="dSub" class="text-sm text-slate-500"></div>
+            </div>
+            <button class="icon-btn !text-base" type="button" onclick="this.closest('dialog').close()" aria-label="Schließen">✕</button>
+        </div>
+        <div class="relative mb-4 h-48"><canvas id="detailChart"></canvas></div>
+        <ul id="dList" class="divide-y divide-slate-100 dark:divide-zinc-800"></ul>
+    </div>
+</dialog>
+
+<script>
+/* PegelTracker – Verbindung zu Supabase (Core-Projekt, gemeinsam mit TravelBase und Questlog)
+   Publishable Key darf öffentlich sein; Schutz über Login + Zugriffsregeln (supabase/pegeltracker_core.sql).
+   NIEMALS den "secret" bzw. "service_role" Key hier eintragen! */
+const PT_CONFIG = {
+    url: 'https://syaonnedmidaipwjjmio.supabase.co',
+    key: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX'
+};
+
+/* ═════════ Berechnung ═════════
+   Alkohol: Widmark mit Körperwasser nach Watson (Geschlecht, Alter, Größe, Gewicht).
+     c(‰) = A(g) · 0,8 / (1,055 · Körperwasser)
+   Resorption: linear über eine Anflutungszeit, mit Essen langsamer und mit höherem Resorptionsdefizit.
+   Abbau: konstant (Mittelwert 0,15 ‰/h), beginnt mit dem ersten Getränk.
+   Koffein: Ein-Kompartiment-Modell, Aufnahme ~45 min bis Maximum, Halbwertszeit 5 h. */
+const MODEL = {
+    elimPerH: 0.15,                       /* ‰ pro Stunde */
+    absorbMin: { empty: 30, food: 90 },   /* Anflutungszeit */
+    deficit: { empty: 0.10, food: 0.25 }, /* Resorptionsdefizit */
+    ethanolDensity: 0.789,                /* g/ml */
+    cafKa: 4.0,                           /* Aufnahme 1/h */
+    cafHalfLifeH: 5,
+    stepMin: 2
+};
+const MILESTONES = [0.8, 0.5, 0.3, 0.0];
+
+const QUICK = [
+    { emoji: '🍺', name: 'Bier 0,33 l', category: 'beer', volume_ml: 330, abv: 5.0 },
+    { emoji: '🍺', name: 'Bier 0,5 l', category: 'beer', volume_ml: 500, abv: 5.0 },
+    { emoji: '🍷', name: 'Glas Wein', category: 'wine', volume_ml: 200, abv: 12.0 },
+    { emoji: '🥂', name: 'Glas Prosecco', category: 'sparkling', volume_ml: 100, abv: 11.0 }
+];
+const STANDARD = [
+    { group: 'Cocktails & Longdrinks', items: [
+        { name: 'Espresso Martini', category: 'cocktail', volume_ml: 120, abv: 16.5, caffeine_mg: 60 },
+        { name: 'Aperol Spritz', category: 'cocktail', volume_ml: 200, abv: 8.0 },
+        { name: 'Hugo', category: 'cocktail', volume_ml: 200, abv: 6.0 },
+        { name: 'Gin Tonic', category: 'cocktail', volume_ml: 200, abv: 7.5 },
+        { name: 'Cuba Libre', category: 'cocktail', volume_ml: 200, abv: 8.0, caffeine_mg: 15 },
+        { name: 'Wodka Energy', category: 'cocktail', volume_ml: 290, abv: 5.5, caffeine_mg: 80 },
+        { name: 'Mojito', category: 'cocktail', volume_ml: 200, abv: 9.0 },
+        { name: 'Long Island Iced Tea', category: 'cocktail', volume_ml: 250, abv: 16.0, caffeine_mg: 10 }
+    ] },
+    { group: 'Shots', items: [
+        { name: 'Shot Berliner Luft', category: 'shot', volume_ml: 20, abv: 18.0 },
+        { name: 'Shot Jägermeister', category: 'shot', volume_ml: 20, abv: 35.0 },
+        { name: 'Shot Wodka', category: 'shot', volume_ml: 20, abv: 40.0 },
+        { name: 'Shot Tequila', category: 'shot', volume_ml: 20, abv: 38.0 }
+    ] },
+    { group: 'Bier & Wein', items: [
+        { name: 'Weizen 0,5 l', category: 'beer', volume_ml: 500, abv: 5.4 },
+        { name: 'Radler 0,5 l', category: 'beer', volume_ml: 500, abv: 2.5 },
+        { name: 'Wein 0,1 l', category: 'wine', volume_ml: 100, abv: 12.0 },
+        { name: 'Sekt 0,1 l', category: 'sparkling', volume_ml: 100, abv: 11.0 }
+    ] },
+    { group: 'Koffein', items: [
+        { name: 'Espresso', category: 'caffeine', volume_ml: 30, abv: 0, caffeine_mg: 63 },
+        { name: 'Tasse Kaffee', category: 'caffeine', volume_ml: 200, abv: 0, caffeine_mg: 90 },
+        { name: 'Cola 0,33 l', category: 'caffeine', volume_ml: 330, abv: 0, caffeine_mg: 33 },
+        { name: 'Energy Drink 0,25 l', category: 'caffeine', volume_ml: 250, abv: 0, caffeine_mg: 80 },
+        { name: 'Mate 0,5 l', category: 'caffeine', volume_ml: 500, abv: 0, caffeine_mg: 100 }
+    ] }
+];
+const CAT_EMOJI = { beer: '🍺', wine: '🍷', sparkling: '🥂', cocktail: '🍹', shot: '🥃', spirit: '🥃', caffeine: '☕', other: '🥤' };
+
+const H = 3600e3, MIN = 60e3;
+const grams = d => d.volume_ml * (d.abv / 100) * MODEL.ethanolDensity;
+
+function ageFrom(b) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(b || ''); if (!m) return null;
+    const n = new Date(); let a = n.getFullYear() - +m[1];
+    if (n.getMonth() + 1 < +m[2] || (n.getMonth() + 1 === +m[2] && n.getDate() < +m[3])) a--;
+    return a;
+}
+
+/* Profil → Umrechnung Gramm Alkohol in ‰. Fehlende Werte werden mit Standardwerten ergänzt. */
+function bodyModel(p) {
+    const missing = [];
+    let sex = p && p.gender; if (!sex) missing.push('Geschlecht');
+    let w = p && +p.weight_kg; if (!w) { missing.push('Gewicht'); w = sex === 'female' ? 65 : 80; }
+    let h = p && +p.height_cm; if (!h) { missing.push('Größe'); h = sex === 'female' ? 168 : 180; }
+    let age = p && ageFrom(p.birthday); if (age == null) { missing.push('Geburtsdatum'); age = 30; }
+    const male = 2.447 - 0.09516 * age + 0.1074 * h + 0.3362 * w;
+    const female = -2.097 + 0.1069 * h + 0.2466 * w;
+    const tbw = sex === 'female' ? female : sex === 'male' ? male : (male + female) / 2;
+    return { perGram: 0.8 / (1.055 * tbw), tbw, w, h, age, sex, missing };
+}
+
+/* Verlauf für eine Menge Getränke: [{t, bac, caf}] von from bis to.
+   Alkohol wird über die Anflutungszeit gleichmäßig aufgenommen und konstant abgebaut. */
+function simulate(drinks, body, from, to) {
+    const step = MODEL.stepMin * MIN, elim = MODEL.elimPerH * MODEL.stepMin / 60;
+    const doses = drinks.filter(d => d.abv > 0).map(d => {
+        const food = d.with_food ? 'food' : 'empty';
+        const t = +new Date(d.consumed_at), dur = MODEL.absorbMin[food] * MIN;
+        return { t, end: t + dur, rate: grams(d) * (1 - MODEL.deficit[food]) * body.perGram / dur };
+    });
+    const ke = Math.LN2 / MODEL.cafHalfLifeH, ka = MODEL.cafKa;
+    const caffeine = drinks.filter(d => d.caffeine_mg > 0).map(d => ({ t: +new Date(d.consumed_at), mg: +d.caffeine_mg }));
+    const cafAt = t => caffeine.reduce((s, c) => {
+        const x = (t - c.t) / H; if (x < 0) return s;
+        return s + c.mg * ka / (ka - ke) * (Math.exp(-ke * x) - Math.exp(-ka * x));
+    }, 0);
+    const out = []; let bac = 0;
+    for (let t = from; t <= to; t += step) {
+        out.push({ t, bac, caf: cafAt(t) });
+        let inflow = 0;
+        for (const d of doses) {
+            const a = Math.max(t, d.t), b = Math.min(t + step, d.end);
+            if (b > a) inflow += d.rate * (b - a);
+        }
+        bac = Math.max(0, bac + inflow - elim);
+    }
+    return out;
+}
+
+/* Zeitpunkt, an dem eine Session wieder 0,0 ‰ erreicht */
+function zeroTime(drinks, body) {
+    const alc = drinks.filter(d => d.abv > 0);
+    if (!alc.length) return null;
+    const start = +new Date(alc[0].consumed_at);
+    const lastAbs = Math.max(...alc.map(d => +new Date(d.consumed_at) + MODEL.absorbMin[d.with_food ? 'food' : 'empty'] * MIN));
+    const curve = simulate(alc, body, start, start + 72 * H);
+    const hit = curve.find(p => p.t > lastAbs && p.bac <= 0);
+    return hit ? hit.t : start + 72 * H;
+}
+
+/* Trinksessions: beginnen mit dem ersten alkoholischen Getränk und laufen bis 0,0 ‰.
+   Alles, was vor diesem Zeitpunkt getrunken wird (auch Kaffee), gehört dazu. */
+function buildSessions(drinks, body) {
+    const sorted = [...drinks].sort((a, b) => new Date(a.consumed_at) - new Date(b.consumed_at));
+    const sessions = []; let cur = null;
+    for (const d of sorted.filter(d => d.abv > 0)) {
+        const t = +new Date(d.consumed_at);
+        if (cur && t < cur.end) { cur.drinks.push(d); cur.end = zeroTime(cur.drinks, body); }
+        else { cur = { start: t, drinks: [d] }; cur.end = zeroTime(cur.drinks, body); sessions.push(cur); }
+    }
+    for (const d of sorted.filter(d => !(d.abv > 0))) {
+        const t = +new Date(d.consumed_at);
+        const s = sessions.find(s => t >= s.start - 2 * H && t <= s.end);
+        if (s) s.drinks.push(d);
+    }
+    for (const s of sessions) {
+        s.drinks.sort((a, b) => new Date(a.consumed_at) - new Date(b.consumed_at));
+        s.curve = simulate(s.drinks, body, s.start, s.end + 30 * MIN);
+        const peak = s.curve.reduce((m, p) => p.bac > m.bac ? p : m, s.curve[0]);
+        s.peak = peak.bac; s.peakAt = peak.t;
+        s.grams = s.drinks.reduce((g, d) => g + grams(d), 0);
+        s.caffeine = s.drinks.reduce((c, d) => c + (+d.caffeine_mg || 0), 0);
+    }
+    return sessions;
+}
+
+/* Wann fällt der Pegel nach dem Höchstwert unter eine Schwelle? */
+function milestoneTime(s, level) {
+    const after = s.curve.filter(p => p.t >= s.peakAt);
+    if (level === 0) return s.end;
+    if (s.peak <= level) return null;
+    const p = after.find(p => p.bac <= level);
+    return p ? p.t : null;
+}
+
+/* ═════════ Anzeige-Helfer ═════════ */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nf = (x, d = 2) => (+x).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtTime = t => new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+const fmtDay = t => new Date(t).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+const fmtDayShort = t => new Date(t).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+const sameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
+const fmtWhen = (t, ref = Date.now()) => sameDay(t, ref) ? fmtTime(t) : fmtDayShort(t) + ' ' + fmtTime(t);
+const fmtDur = ms => { const m = Math.max(0, Math.round(ms / MIN)); return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min` : `${m} min`; };
+const localInput = t => { const d = new Date(t - new Date(t).getTimezoneOffset() * MIN); return d.toISOString().slice(0, 16); };
+const isDark = () => document.documentElement.classList.contains('dark');
+
+function bacColor(b) { return b >= 1.1 ? '#dc2626' : b >= 0.5 ? '#ea580c' : b >= 0.3 ? '#d97706' : b > 0 ? '#ca8a04' : '#059669'; }
+function bacText(b) {
+    if (b <= 0) return 'Nüchtern.';
+    if (b < 0.3) return 'Leicht angeheitert. Bitte trotzdem nicht fahren.';
+    if (b < 0.5) return 'Ab 0,3 ‰ mit Ausfallerscheinungen strafbar.';
+    if (b < 1.1) return 'Über 0,5 ‰: Ordnungswidrigkeit am Steuer.';
+    return 'Ab 1,1 ‰: absolute Fahruntüchtigkeit.';
+}
+function cafLevel(mg) {
+    if (mg < 40) return ['gering', 'bg-slate-200 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300'];
+    if (mg < 150) return ['moderat', 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'];
+    if (mg < 300) return ['hoch', 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'];
+    return ['sehr hoch', 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'];
+}
+
+/* ═════════ Zustand ═════════ */
+const sb = supabase.createClient(PT_CONFIG.url, PT_CONFIG.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+const check = ({ data, error }) => { if (error) throw error; return data; };
+const CACHE = 'pt_cache_v1_';
+const cacheGet = k => { try { return JSON.parse(localStorage.getItem(CACHE + k)); } catch (e) { return null; } };
+const cacheSet = (k, v) => { try { localStorage.setItem(CACHE + k, JSON.stringify(v)); } catch (e) {} };
+const clearCache = () => { try { Object.keys(localStorage).filter(k => k.startsWith(CACHE)).forEach(k => localStorage.removeItem(k)); } catch (e) {} };
+const isNetErr = e => !navigator.onLine || /fetch|network|load failed|timeout/i.test(String(e && (e.message || e)));
+
+const S = { user: null, role: null, people: [], viewId: null, drinks: [], custom: [], sessions: [], body: null, tab: 'dash' };
+const viewPerson = () => S.people.find(p => p.id === S.viewId) || null;
+const viewingSelf = () => S.user && S.viewId === S.user.id;
+let liveChart = null, detailChart = null;
+
+function errorText(e) {
+    const m = String(e && (e.message || e));
+    if (/invalid login credentials/i.test(m)) return 'E-Mail oder Passwort ist falsch.';
+    if (/could not find the function|relation .* does not exist|permission denied/i.test(m)) return 'Die Datenbank ist noch nicht eingerichtet (supabase/pegeltracker_core.sql).';
+    if (/row-level security/i.test(m)) return 'Keine Berechtigung für diese Aktion.';
+    if (isNetErr(e)) return 'Keine Verbindung zum Server. Bist du online?';
+    return m;
+}
+function banner(html) { const b = $('#banner'); b.hidden = !html; b.innerHTML = html || ''; }
+function flash(text, ok = true) {
+    const m = $('#entryMsg'); m.hidden = false; m.textContent = text;
+    m.className = 'mt-3 rounded-lg px-3 py-2 text-sm font-semibold ' + (ok ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300');
+    clearTimeout(flash.t); flash.t = setTimeout(() => { m.hidden = true; }, 3500);
+}
+
+/* ═════════ Daten ═════════ */
+async function loadPeople() {
+    S.role = check(await sb.rpc('overall_app_role', { p_app: 'pegeltracker' }));
+    if (!S.role || S.role === 'guest') return false;
+    S.people = check(await sb.rpc('pegel_people')) || [];
+    if (!S.people.some(p => p.is_me)) S.people.unshift({ id: S.user.id, display_name: S.user.email, is_me: true });
+    return true;
+}
+
+async function loadDrinks() {
+    const key = 'drinks_' + S.viewId;
+    try {
+        const since = new Date(Date.now() - 730 * 24 * H).toISOString();
+        S.drinks = check(await sb.from('pegel_drinks').select('*').eq('user_id', S.viewId).gte('consumed_at', since).order('consumed_at'));
+        if (viewingSelf()) S.custom = check(await sb.from('pegel_custom_drinks').select('*').order('name'));
+        cacheSet(key, { drinks: S.drinks, custom: S.custom });
+        banner(null);
+    } catch (e) {
+        const c = cacheGet(key);
+        if (!c || !isNetErr(e)) throw e;
+        S.drinks = c.drinks; S.custom = c.custom || [];
+        banner('📴 Offline: du siehst den zuletzt geladenen Stand.');
+    }
+}
+
+async function addDrink(d) {
+    if (!viewingSelf()) return;
+    const row = {
+        name: d.name, category: d.category || 'other', volume_ml: d.volume_ml, abv: d.abv || 0,
+        caffeine_mg: d.caffeine_mg || 0, with_food: $('#foodToggle').checked,
+        consumed_at: new Date($('#entryTime').value || Date.now()).toISOString()
+    };
+    try {
+        const saved = check(await sb.from('pegel_drinks').insert(row).select().single());
+        S.drinks.push(saved);
+        cacheSet('drinks_' + S.viewId, { drinks: S.drinks, custom: S.custom });
+        flash(`${CAT_EMOJI[row.category]} ${row.name} eingetragen.`);
+        $('#entryTime').value = localInput(Date.now()); entryTimeTouched = false;
+        recompute(); render();
+    } catch (e) { flash(errorText(e), false); }
+}
+
+async function deleteDrink(id) {
+    if (!viewingSelf() || !confirm('Getränk löschen?')) return;
+    try {
+        check(await sb.from('pegel_drinks').delete().eq('id', id));
+        S.drinks = S.drinks.filter(d => d.id !== id);
+        recompute(); render();
+        if ($('#detailDlg').open) $('#detailDlg').close();
+    } catch (e) { alert(errorText(e)); }
+}
+
+function recompute() {
+    S.body = bodyModel(viewPerson());
+    S.sessions = buildSessions(S.drinks, S.body);
+}
+
+/* ═════════ Rendering ═════════ */
+function activeSession(now = Date.now()) {
+    const s = S.sessions[S.sessions.length - 1];
+    return s && s.end > now ? s : null;
+}
+function valueAt(curve, t) {
+    if (!curve.length || t < curve[0].t) return { bac: 0, caf: 0 };
+    const i = Math.min(curve.length - 1, Math.floor((t - curve[0].t) / (MODEL.stepMin * MIN)));
+    return curve[i];
+}
+
+function render() {
+    const now = Date.now();
+    const s = activeSession(now);
+    const me = viewPerson();
+    $('#subline').textContent = viewingSelf() ? 'Mein Bereich' : `Bereich von ${me ? me.display_name : '…'}`;
+    $('#entryCard').hidden = !viewingSelf();
+    $('#readonlyCard').hidden = viewingSelf();
+    $('#roName').textContent = me ? me.display_name : '';
+    if (S.body && S.body.missing.length && viewingSelf())
+        banner(`👤 Für eine genaue Berechnung fehlen im Profil: <b>${S.body.missing.join(', ')}</b>. <a class="underline" href="/konto.html?from=pegeltracker#app-pegeltracker">Jetzt ergänzen</a>`);
+
+    /* aktueller Pegel */
+    const cur = s ? valueAt(s.curve, now) : { bac: 0 };
+    const soon = s ? valueAt(s.curve, now + 10 * MIN) : { bac: 0 };
+    $('#bacNow').textContent = nf(cur.bac);
+    $('#bacNow').style.color = s ? bacColor(cur.bac) : '';
+    $('#bacTrend').textContent = !s ? '' : soon.bac > cur.bac + 0.005 ? '↗' : cur.bac > 0 ? '↘' : '';
+    $('#bacTrend').style.color = bacColor(cur.bac);
+    $('#bacHint').textContent = s ? bacText(cur.bac) : 'Keine laufende Session.';
+    $('#statPeak').textContent = s ? `${nf(s.peak)} ‰ · ${fmtTime(s.peakAt)}` : '–';
+    $('#statStart').textContent = s ? `${fmtWhen(s.start, now)} (${fmtDur(now - s.start)})` : '–';
+    $('#statCount').textContent = s ? s.drinks.length : '–';
+    $('#statGrams').textContent = s ? `${nf(s.grams, 0)} g` : '–';
+
+    /* Koffein: Modell über alle Getränke der letzten 24 h */
+    const recent = S.drinks.filter(d => +d.caffeine_mg > 0 && now - new Date(d.consumed_at) < 24 * H && new Date(d.consumed_at) <= now);
+    const caf = simulate(recent, S.body, now, now)[0].caf;
+    const today = recent.filter(d => sameDay(d.consumed_at, now)).reduce((m, d) => m + +d.caffeine_mg, 0);
+    const [lvl, cls] = cafLevel(caf);
+    $('#cafNow').textContent = nf(caf, 0);
+    $('#cafLevel').textContent = lvl; $('#cafLevel').className = 'ml-1 rounded-full px-2 py-0.5 text-xs ' + cls;
+    $('#cafHint').textContent = `Heute insgesamt ${nf(today, 0)} mg (Richtwert max. 400 mg/Tag).` +
+        (s && caf >= 40 && cur.bac > 0 ? ' Koffein macht wacher, senkt aber nicht den Promillewert.' : '');
+
+    /* Meilensteine */
+    $('#milestones').innerHTML = MILESTONES.map(level => {
+        const t = s ? milestoneTime(s, level) : null;
+        const reached = s && t != null && t <= now;
+        const never = s && t == null;
+        const label = level === 0 ? 'Nüchtern' : level === 0.5 ? 'Grenze Auto' : level === 0.3 ? 'Untere Grenze' : 'Alte Grenze';
+        const body = !s ? '<span class="text-slate-400">–</span>'
+            : never ? '<span class="text-sm text-slate-400">nicht erreicht</span>'
+            : reached ? `<span class="font-extrabold text-emerald-700 dark:text-emerald-400">✓ ${fmtWhen(t, now)}</span>`
+            : `<span class="text-xl font-extrabold tabular-nums text-slate-900 dark:text-white">${fmtWhen(t, now)}</span><span class="block text-xs text-slate-500">in ${fmtDur(t - now)}</span>`;
+        return `<div class="ms ${reached ? 'done' : ''}"><div class="text-xs font-bold text-slate-500">${nf(level, 1)} ‰ · ${label}</div><div class="mt-1">${body}</div></div>`;
+    }).join('');
+
+    /* Getränke der Session */
+    const list = s ? s.drinks : [];
+    $('#sessionList').innerHTML = list.length ? list.slice().reverse().map(drinkRow).join('')
+        : '<li class="py-3 text-sm text-slate-500">Noch nichts getrunken.</li>';
+
+    renderLiveChart(s, now);
+    renderHistory(now);
+}
+
+function drinkRow(d) {
+    const meta = [d.volume_ml >= 1000 ? nf(d.volume_ml / 1000, 1) + ' l' : nf(d.volume_ml, 0) + ' ml'];
+    if (d.abv > 0) meta.push(nf(d.abv, 1) + ' %', nf(grams(d), 0) + ' g');
+    if (d.caffeine_mg > 0) meta.push(nf(d.caffeine_mg, 0) + ' mg Koffein');
+    if (d.with_food) meta.push('🍽️');
+    return `<li class="flex items-center gap-3 py-2.5">
+        <span class="w-14 shrink-0 text-sm font-bold tabular-nums text-slate-500">${fmtTime(d.consumed_at)}</span>
+        <span class="text-xl">${CAT_EMOJI[d.category] || '🥤'}</span>
+        <span class="min-w-0 flex-1"><b class="block truncate text-slate-900 dark:text-white">${esc(d.name)}</b><span class="text-xs text-slate-500">${meta.join(' · ')}</span></span>
+        ${viewingSelf() ? `<button class="text-slate-400 hover:text-red-600" type="button" data-del="${d.id}" aria-label="Löschen">🗑️</button>` : ''}
+    </li>`;
+}
+
+function chartConfig(curve, nowT) {
+    const grid = isDark() ? '#27272a' : '#e2e8f0', tick = isDark() ? '#a1a1aa' : '#64748b';
+    const nowLine = {
+        id: 'now', afterDatasetsDraw(c) {
+            if (nowT == null) return;
+            const x = c.scales.x.getPixelForValue(nowT); if (x < c.chartArea.left || x > c.chartArea.right) return;
+            const g = c.ctx; g.save(); g.strokeStyle = '#f59e0b'; g.setLineDash([4, 4]); g.beginPath();
+            g.moveTo(x, c.chartArea.top); g.lineTo(x, c.chartArea.bottom); g.stroke();
+            g.fillStyle = '#f59e0b'; g.font = 'bold 11px "Plus Jakarta Sans"'; g.fillText('jetzt', x + 4, c.chartArea.top + 10); g.restore();
+        }
+    };
+    const thresholds = {
+        id: 'thresholds', beforeDatasetsDraw(c) {
+            const g = c.ctx, y = c.scales.y; g.save(); g.setLineDash([2, 4]); g.font = '10px "Plus Jakarta Sans"';
+            for (const l of [0.3, 0.5, 0.8, 1.1]) {
+                if (l > y.max) continue; const py = y.getPixelForValue(l);
+                g.strokeStyle = tick + '66'; g.beginPath(); g.moveTo(c.chartArea.left, py); g.lineTo(c.chartArea.right, py); g.stroke();
+                g.fillStyle = tick; g.fillText(nf(l, 1) + ' ‰', c.chartArea.left + 4, py - 3);
+            }
+            g.restore();
+        }
+    };
+    const maxCaf = Math.max(100, ...curve.map(p => p.caf));
+    return {
+        type: 'line',
+        data: { datasets: [
+            { label: 'Promille', data: curve.map(p => ({ x: p.t, y: +p.bac.toFixed(3) })), borderColor: '#d97706', borderWidth: 3, pointRadius: 0, tension: 0.25, yAxisID: 'y',
+              segment: { borderDash: ctx => nowT != null && ctx.p0.parsed.x >= nowT ? [6, 4] : undefined } },
+            { label: 'Koffein', data: curve.map(p => ({ x: p.t, y: Math.round(p.caf) })), borderColor: '#78350f55', backgroundColor: '#92400e22', fill: true, borderWidth: 1, pointRadius: 0, tension: 0.3, yAxisID: 'y1' }
+        ] },
+        options: {
+            responsive: true, maintainAspectRatio: false, animation: false, parsing: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { display: false }, tooltip: { callbacks: {
+                title: items => fmtWhen(items[0].parsed.x),
+                label: i => i.datasetIndex === 0 ? ` ${nf(i.parsed.y)} ‰` : ` ${i.parsed.y} mg Koffein`
+            } } },
+            scales: {
+                x: { type: 'linear', min: curve[0].t, max: curve[curve.length - 1].t, grid: { color: grid }, ticks: { color: tick, maxTicksLimit: 8, callback: v => fmtTime(v) } },
+                y: { min: 0, suggestedMax: 1, grid: { color: grid }, ticks: { color: tick, callback: v => nf(v, 1) } },
+                y1: { position: 'right', min: 0, max: Math.ceil(maxCaf * 1.4 / 50) * 50, grid: { display: false }, ticks: { color: tick, maxTicksLimit: 4, callback: v => v + ' mg' } }
+            }
+        },
+        plugins: [nowLine, thresholds]
+    };
+}
+
+function renderLiveChart(s, now) {
+    $('#chartEmpty').hidden = !!s;
+    $('#liveChart').parentElement.hidden = !s;
+    if (liveChart) { liveChart.destroy(); liveChart = null; }
+    if (!s) return;
+    liveChart = new Chart($('#liveChart'), chartConfig(s.curve, now));
+}
+
+function renderHistory(now) {
+    const done = S.sessions.filter(s => s.end <= now).reverse();
+    $('#histEmpty').hidden = done.length > 0;
+    $('#histList').innerHTML = done.map(s => {
+        const i = S.sessions.indexOf(s);
+        return `<button class="card text-left transition hover:border-brand-500" type="button" data-session="${i}">
+            <div class="flex items-start justify-between gap-2">
+                <div><b class="text-slate-900 dark:text-white">${fmtDay(s.start)}</b>
+                <div class="text-sm text-slate-500">${fmtTime(s.start)} bis ${fmtWhen(s.end, s.start)} · ${fmtDur(s.end - s.start)}</div></div>
+                <span class="rounded-full px-2.5 py-1 text-sm font-extrabold text-white" style="background:${bacColor(s.peak)}">${nf(s.peak)} ‰</span>
+            </div>
+            <div class="mt-2 text-sm">${s.drinks.map(d => CAT_EMOJI[d.category] || '🥤').join(' ')}</div>
+            <div class="mt-1 text-xs text-slate-500">${s.drinks.length} Getränke · ${nf(s.grams, 0)} g Alkohol${s.caffeine ? ` · ${nf(s.caffeine, 0)} mg Koffein` : ''}</div>
+        </button>`;
+    }).join('');
+}
+
+function openDetail(i) {
+    const s = S.sessions[i]; if (!s) return;
+    $('#dTitle').textContent = fmtDay(s.start);
+    $('#dSub').textContent = `${fmtTime(s.start)} bis ${fmtWhen(s.end, s.start)} · Höchstwert ${nf(s.peak)} ‰ um ${fmtTime(s.peakAt)} · ${nf(s.grams, 0)} g Alkohol`;
+    $('#dList').innerHTML = s.drinks.map(drinkRow).join('');
+    $('#detailDlg').showModal();
+    if (detailChart) detailChart.destroy();
+    detailChart = new Chart($('#detailChart'), chartConfig(s.curve, null));
+}
+
+/* ═════════ Erfassung ═════════ */
+let entryTimeTouched = false;
+function buildEntry() {
+    $('#quickBtns').innerHTML = QUICK.map((q, i) => `<button class="chip" type="button" data-quick="${i}"><span class="text-2xl">${q.emoji}</span>${esc(q.name)}</button>`).join('');
+    const opt = (d, v) => `<option value="${v}">${esc(d.name)} · ${d.abv > 0 ? nf(d.abv, 1) + ' %' : nf(d.caffeine_mg, 0) + ' mg'}</option>`;
+    $('#stdSel').innerHTML = STANDARD.map((g, gi) => `<optgroup label="${esc(g.group)}">${g.items.map((d, i) => opt(d, `s${gi}_${i}`)).join('')}</optgroup>`).join('')
+        + (S.custom.length ? `<optgroup label="Eigene">${S.custom.map(d => opt(d, 'c' + d.id)).join('')}</optgroup>` : '');
+}
+function stdDrink(v) {
+    if (v.startsWith('c')) return S.custom.find(d => 'c' + d.id === v);
+    const [gi, i] = v.slice(1).split('_').map(Number);
+    return STANDARD[gi] && STANDARD[gi].items[i];
+}
+
+document.addEventListener('click', e => {
+    const q = e.target.closest('[data-quick]'); if (q) return addDrink(QUICK[+q.dataset.quick]);
+    const del = e.target.closest('[data-del]'); if (del) return deleteDrink(del.dataset.del);
+    const ses = e.target.closest('[data-session]'); if (ses) return openDetail(+ses.dataset.session);
+    const tab = e.target.closest('[data-tab]'); if (tab) {
+        S.tab = tab.dataset.tab;
+        document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b === tab));
+        $('#dashView').hidden = S.tab !== 'dash'; $('#histView').hidden = S.tab !== 'hist';
+    }
+});
+$('#stdAdd').onclick = () => { const d = stdDrink($('#stdSel').value); if (d) addDrink(d); };
+$('#entryTime').addEventListener('input', () => { entryTimeTouched = true; });
+$('#manualForm').onsubmit = async e => {
+    e.preventDefault();
+    const d = {
+        name: $('#mName').value.trim(), category: $('#mCat').value,
+        volume_ml: Math.round(parseFloat(String($('#mVol').value).replace(',', '.')) * 1000),
+        abv: parseFloat(String($('#mAbv').value).replace(',', '.')) || 0,
+        caffeine_mg: parseFloat($('#mCaf').value) || 0
+    };
+    if (!d.name || !(d.volume_ml > 0)) return flash('Bitte Bezeichnung und Menge angeben.', false);
+    if ($('#mSave').checked) {
+        try {
+            const row = check(await sb.from('pegel_custom_drinks').upsert(d, { onConflict: 'user_id,name' }).select().single());
+            S.custom = S.custom.filter(c => c.id !== row.id).concat(row).sort((a, b) => a.name.localeCompare(b.name));
+            buildEntry();
+        } catch (err) { flash(errorText(err), false); }
+    }
+    await addDrink(d);
+    e.target.reset();
+};
+
+/* ═════════ Konto, Thema, Start ═════════ */
+function applyTheme(dark, save) {
+    document.documentElement.classList.toggle('dark', dark);
+    $('#themeToggle').textContent = dark ? '☀️' : '🌙';
+    $('#themeToggle').setAttribute('aria-label', dark ? 'Zum hellen Modus wechseln' : 'Zum dunklen Modus wechseln');
+    document.querySelector('meta[name="theme-color"]').content = dark ? '#000000' : '#d97706';
+    if (save) { try { localStorage.setItem('overall-theme', dark ? 'dark' : 'light'); } catch (e) {} }
+    if (S.user && S.body) render();
+}
+applyTheme(isDark(), false);
+$('#themeToggle').onclick = () => applyTheme(!isDark(), true);
+
+$('#meBtn').onclick = e => { e.stopPropagation(); const m = $('#meMenu'); m.hidden = !m.hidden; $('#meBtn').setAttribute('aria-expanded', !m.hidden); };
+document.addEventListener('click', e => { if (!$('#meMenu').hidden && !$('#meMenu').contains(e.target)) $('#meMenu').hidden = true; });
+$('#logoutBtn').onclick = async () => { clearCache(); try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {} location.reload(); };
+
+$('#loginForm').onsubmit = async e => {
+    e.preventDefault();
+    const m = $('#loginMsg'); m.hidden = true;
+    const { error } = await sb.auth.signInWithPassword({ email: $('#loginMail').value.trim(), password: $('#loginPw').value });
+    if (error) { m.hidden = false; m.className = 'text-sm font-semibold text-red-600'; m.textContent = errorText(error); }
+};
+$('#forgotBtn').onclick = async () => {
+    const m = $('#loginMsg'), email = $('#loginMail').value.trim();
+    m.hidden = false;
+    if (!email) { m.className = 'text-sm font-semibold text-red-600'; m.textContent = 'Bitte zuerst die E-Mail eintragen.'; return; }
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+    m.className = 'text-sm font-semibold ' + (error ? 'text-red-600' : 'text-emerald-600');
+    m.textContent = error ? errorText(error) : 'Wir haben dir einen Link zum Zurücksetzen geschickt.';
+};
+
+$('#personSel').onchange = async () => {
+    S.viewId = $('#personSel').value;
+    try { await loadDrinks(); } catch (e) { banner('⚠️ ' + esc(errorText(e))); S.drinks = []; }
+    recompute(); render();
+};
+
+function show(view) {
+    $('#loginView').hidden = view !== 'login';
+    $('#noAccessView').hidden = view !== 'none';
+    $('#appView').hidden = view !== 'app';
+}
+
+async function start(session) {
+    S.user = session ? { id: session.user.id, email: session.user.email } : null;
+    $('#meBtn').hidden = !S.user;
+    if (!S.user) { show('login'); return; }
+    try {
+        if (!(await loadPeople())) { show('none'); return; }
+        cacheSet('people_' + S.user.id, { role: S.role, people: S.people });
+    } catch (e) {
+        const c = cacheGet('people_' + S.user.id);
+        if (!c || !isNetErr(e)) { show('app'); banner('⚠️ ' + esc(errorText(e))); return; }
+        S.role = c.role; S.people = c.people;
+    }
+    const me = S.people.find(p => p.is_me);
+    $('#menuName').textContent = me.display_name || S.user.email; $('#menuMail').textContent = S.user.email;
+    $('#adminLink').hidden = S.role !== 'admin';
+    S.viewId = S.user.id;
+    /* Admin: Umschalter auf die Bereiche der Mitglieder */
+    const sel = $('#personSel');
+    sel.hidden = !(S.role === 'admin' && S.people.length > 1);
+    sel.innerHTML = S.people.map(p => `<option value="${p.id}">${p.is_me ? '🙋 Ich' : '👤 ' + esc(p.display_name)}</option>`).join('');
+    show('app');
+    try { await loadDrinks(); } catch (e) { banner('⚠️ ' + esc(errorText(e))); }
+    buildEntry();
+    $('#entryTime').value = localInput(Date.now());
+    recompute(); render();
+}
+
+/* Live: jede Minute neu berechnen (Pegel, Meilensteine, Chart) */
+setInterval(() => {
+    if (!S.user || !S.body) return;
+    if (!entryTimeTouched) $('#entryTime').value = localInput(Date.now());
+    render();
+}, 60e3);
+
+sb.auth.onAuthStateChange((ev, session) => {
+    if (ev === 'INITIAL_SESSION' || ev === 'SIGNED_IN' || ev === 'SIGNED_OUT') {
+        if (ev === 'SIGNED_IN' && S.user && session && S.user.id === session.user.id) return;
+        setTimeout(() => start(session), 0);
+    }
+});
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body></html>
