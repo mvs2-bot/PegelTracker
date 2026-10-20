@@ -265,13 +265,18 @@ const PT_CONFIG = {
 /* ═════════ Berechnung ═════════
    Alkohol: Widmark mit Körperwasser nach Watson (Geschlecht, Alter, Größe, Gewicht).
      c(‰) = A(g) · 0,8 / (1,055 · Körperwasser)
-   Resorption: linear über eine Anflutungszeit, mit Essen langsamer und mit höherem Resorptionsdefizit.
-   Abbau: konstant (Mittelwert 0,15 ‰/h), beginnt mit dem ersten Getränk.
+   Resorption: erster Ordnung (Anteil im Magen-Darm sinkt exponentiell mit ka). Mit Essen bleibt der Alkohol
+     länger im Magen (kleineres ka, Maximum später und niedriger) und das Resorptionsdefizit ist größer
+     (Jones & Jönsson 1994; Wilkinson 1977).
+   Abbau: Michaelis-Menten (Vmax·c/(Km+c)). Ab ca. 0,3 ‰ praktisch konstant ~0,15 ‰/h wie bei Widmark,
+     darunter langsamer, sodass auch kleine Mengen mit Essen einen Pegel ergeben und der Rest auslaufend abgebaut wird.
    Koffein: Ein-Kompartiment-Modell, Aufnahme ~45 min bis Maximum, Halbwertszeit 5 h. */
 const MODEL = {
-    elimPerH: 0.15,                       /* ‰ pro Stunde */
-    absorbMin: { empty: 30, food: 90 },   /* Anflutungszeit */
+    elimVmax: 0.16,                       /* ‰ pro Stunde (max. Abbau), ergibt ~0,15 ‰/h bei 0,8 ‰ */
+    elimKm: 0.05,                         /* ‰, Halbsättigung des Abbaus */
+    ka: { empty: 4.0, food: 1.0 },        /* Resorption 1/h: Halbwertszeit ~10 min nüchtern, ~40 min mit Essen */
     deficit: { empty: 0.10, food: 0.25 }, /* Resorptionsdefizit */
+    zeroBelow: 0.005,                     /* ab hier gilt 0,00 ‰ */
     ethanolDensity: 0.789,                /* g/ml */
     cafKa: 4.0,                           /* Aufnahme 1/h */
     cafHalfLifeH: 5,
@@ -342,13 +347,13 @@ function bodyModel(p) {
 }
 
 /* Verlauf für eine Menge Getränke: [{t, bac, caf}] von from bis to.
-   Alkohol wird über die Anflutungszeit gleichmäßig aufgenommen und konstant abgebaut. */
+   Alkohol wird exponentiell resorbiert und nach Michaelis-Menten abgebaut. */
+const absorbed = (d, t) => t <= d.t ? 0 : 1 - Math.exp(-d.ka * (t - d.t) / H);
 function simulate(drinks, body, from, to) {
-    const step = MODEL.stepMin * MIN, elim = MODEL.elimPerH * MODEL.stepMin / 60;
+    const step = MODEL.stepMin * MIN, dtH = MODEL.stepMin / 60;
     const doses = drinks.filter(d => d.abv > 0).map(d => {
         const food = d.with_food ? 'food' : 'empty';
-        const t = +new Date(d.consumed_at), dur = MODEL.absorbMin[food] * MIN;
-        return { t, end: t + dur, rate: grams(d) * (1 - MODEL.deficit[food]) * body.perGram / dur };
+        return { t: +new Date(d.consumed_at), ka: MODEL.ka[food], dose: grams(d) * (1 - MODEL.deficit[food]) * body.perGram };
     });
     const ke = Math.LN2 / MODEL.cafHalfLifeH, ka = MODEL.cafKa;
     const caffeine = drinks.filter(d => d.caffeine_mg > 0).map(d => ({ t: +new Date(d.consumed_at), mg: +d.caffeine_mg }));
@@ -360,10 +365,8 @@ function simulate(drinks, body, from, to) {
     for (let t = from; t <= to; t += step) {
         out.push({ t, bac, caf: cafAt(t) });
         let inflow = 0;
-        for (const d of doses) {
-            const a = Math.max(t, d.t), b = Math.min(t + step, d.end);
-            if (b > a) inflow += d.rate * (b - a);
-        }
+        for (const d of doses) inflow += d.dose * (absorbed(d, t + step) - absorbed(d, t));
+        const elim = MODEL.elimVmax * bac / (MODEL.elimKm + bac) * dtH;
         bac = Math.max(0, bac + inflow - elim);
     }
     return out;
@@ -374,9 +377,10 @@ function zeroTime(drinks, body) {
     const alc = drinks.filter(d => d.abv > 0);
     if (!alc.length) return null;
     const start = +new Date(alc[0].consumed_at);
-    const lastAbs = Math.max(...alc.map(d => +new Date(d.consumed_at) + MODEL.absorbMin[d.with_food ? 'food' : 'empty'] * MIN));
+    /* nach 5 Halbwertszeiten der Resorption sind > 96 % aufgenommen */
+    const lastAbs = Math.max(...alc.map(d => +new Date(d.consumed_at) + 5 * Math.LN2 / MODEL.ka[d.with_food ? 'food' : 'empty'] * H));
     const curve = simulate(alc, body, start, start + 72 * H);
-    const hit = curve.find(p => p.t > lastAbs && p.bac <= 0);
+    const hit = curve.find(p => p.t > lastAbs && p.bac < MODEL.zeroBelow);
     return hit ? hit.t : start + 72 * H;
 }
 

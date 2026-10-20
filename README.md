@@ -29,8 +29,11 @@ Die Datenbank setzt das selbst durch (Row Level Security), nicht nur die Oberfl�
 
 - **Alkohol:** Widmark-Formel mit Körperwasser nach Watson (Geschlecht, Alter, Größe, Gewicht):
   `‰ = Gramm Alkohol · 0,8 / (1,055 · Körperwasser)`.
-  Resorption linear über 30 min (nüchtern) bzw. 90 min (mit Essen), Resorptionsdefizit 10 % bzw. 25 %,
-  Abbau konstant 0,15 ‰/h. Alle Konstanten stehen oben im Skript in `MODEL`.
+  Resorption erster Ordnung (Halbwertszeit ca. 10 min nüchtern, ca. 40 min mit Essensgrundlage),
+  Resorptionsdefizit 10 % bzw. 25 %. Mit Essen steigt der Pegel dadurch langsamer und erreicht ein niedrigeres,
+  späteres Maximum (vgl. Jones & Jönsson 1994).
+  Abbau nach Michaelis-Menten (Vmax 0,16 ‰/h, Km 0,05 ‰): oberhalb von ca. 0,3 ‰ praktisch konstant ~0,15 ‰/h
+  wie bei Widmark, darunter langsamer. Alle Konstanten stehen oben im Skript in `MODEL`.
 - **Koffein:** Ein-Kompartiment-Modell (Maximum nach ca. 45 min, Halbwertszeit 5 h).
   Angezeigt werden aktives Koffein, Tagesmenge und Verlauf im Chart; den Promillewert beeinflusst es nicht.
 - **Trinksession:** beginnt mit dem ersten alkoholischen Getränk und läuft, bis rechnerisch 0,0 ‰ erreicht sind.
