@@ -69,6 +69,9 @@
         .tab[aria-selected="true"] { @apply bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm; }
         .ms { @apply rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 p-3; }
         .ms.done { @apply border-emerald-300 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40; }
+        .chip[aria-pressed="true"] { @apply border-brand-500 bg-brand-100 ring-2 ring-brand-500 dark:bg-zinc-800; }
+        .btn-add { @apply flex w-full flex-col items-center justify-center gap-0.5 rounded-xl bg-brand-600 px-4 py-3.5 text-lg font-extrabold text-white shadow-md hover:bg-brand-700 active:scale-[.98] transition dark:bg-brand-500 dark:text-zinc-950; }
+        .btn-add:disabled { @apply cursor-not-allowed bg-slate-200 text-slate-400 shadow-none active:scale-100 dark:bg-zinc-800 dark:text-zinc-500; }
     </style>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-700 dark:bg-black dark:text-zinc-300 font-sans antialiased">
@@ -202,10 +205,14 @@
                     <div id="quickBtns" class="mb-4 grid grid-cols-2 gap-2"></div>
 
                     <div class="mb-1 text-xs font-bold text-slate-500">Standard-Getränke &amp; Koffein</div>
-                    <div class="mb-4 flex gap-2">
+                    <div class="mb-4">
                         <select id="stdSel" class="inp"></select>
-                        <button id="stdAdd" class="btn shrink-0" type="button">+</button>
                     </div>
+
+                    <button id="confirmAdd" class="btn-add mb-4" type="button" disabled>
+                        <span id="confirmMain">Erst Getränk auswählen</span>
+                        <span id="confirmSub" class="text-xs font-bold opacity-80" hidden></span>
+                    </button>
 
                     <details class="rounded-xl border border-slate-200 p-3 dark:border-zinc-800">
                         <summary class="cursor-pointer text-sm font-bold text-slate-800 dark:text-zinc-100">✍️ Manuelle Eingabe</summary>
@@ -253,6 +260,25 @@
         <div class="relative mb-4 h-48"><canvas id="detailChart"></canvas></div>
         <ul id="dList" class="divide-y divide-slate-100 dark:divide-zinc-800"></ul>
     </div>
+</dialog>
+
+<!-- Zeitpunkt eines Getränks ändern -->
+<dialog id="timeDlg" class="w-[min(400px,calc(100vw-2rem))] rounded-2xl bg-white p-0 text-slate-700 backdrop:bg-black/50 dark:bg-zinc-900 dark:text-zinc-300">
+    <form id="timeForm" class="flex flex-col gap-4 p-5">
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">🕒 Zeitpunkt ändern</h2>
+                <div id="tName" class="truncate text-sm text-slate-500"></div>
+            </div>
+            <button class="icon-btn !text-base" type="button" data-close-time aria-label="Schließen">✕</button>
+        </div>
+        <label class="lbl">Neuer Zeitpunkt<input id="tTime" class="inp" type="datetime-local" required></label>
+        <div id="tMsg" class="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 dark:bg-red-950/40 dark:text-red-300" hidden></div>
+        <div class="flex gap-2">
+            <button class="btn-ghost flex-1 !py-2.5" type="button" data-close-time>Abbrechen</button>
+            <button id="tSave" class="btn flex-1" type="submit">Speichern</button>
+        </div>
+    </form>
 </dialog>
 
 <script>
@@ -516,8 +542,44 @@ async function addDrink(d) {
         cacheSet('drinks_' + S.viewId, { drinks: S.drinks, custom: S.custom });
         flash(`${CAT_EMOJI[row.category]} ${row.name} eingetragen.`);
         $('#entryTime').value = localInput(Date.now()); entryTimeTouched = false;
+        clearPick();
         recompute(); render();
-    } catch (e) { flash(errorText(e), false); }
+        return true;
+    } catch (e) { flash(errorText(e), false); return false; }
+}
+
+/* Zeitpunkt eines vorhandenen Getränks ändern (aktuelle Session und Historie) */
+let editId = null;
+function openTimeEdit(id) {
+    const d = S.drinks.find(x => String(x.id) === String(id));
+    if (!d || !viewingSelf()) return;
+    editId = d.id;
+    $('#tName').textContent = `${CAT_EMOJI[d.category] || '🥤'} ${d.name} · bisher ${fmtDayShort(d.consumed_at)} ${fmtTime(d.consumed_at)}`;
+    $('#tTime').value = localInput(+new Date(d.consumed_at));
+    $('#tMsg').hidden = true;
+    $('#timeDlg').showModal();
+}
+async function saveTimeEdit() {
+    const d = S.drinks.find(x => x.id === editId);
+    const v = $('#tTime').value;
+    if (!d || !v) return;
+    const when = new Date(v);
+    if (isNaN(when)) { $('#tMsg').hidden = false; $('#tMsg').textContent = 'Bitte einen gültigen Zeitpunkt angeben.'; return; }
+    const detailWasOpen = $('#detailDlg').open;
+    $('#tSave').disabled = true;
+    try {
+        const saved = check(await sb.from('pegel_drinks').update({ consumed_at: when.toISOString() }).eq('id', d.id).select().single());
+        Object.assign(d, saved);
+        cacheSet('drinks_' + S.viewId, { drinks: S.drinks, custom: S.custom });
+        $('#timeDlg').close();
+        recompute(); render();
+        /* Detailansicht neu aufbauen – die Session kann sich durch die neue Zeit verschoben haben */
+        if (detailWasOpen) {
+            const i = S.sessions.findIndex(s => s.drinks.some(x => x.id === d.id));
+            if (i >= 0) openDetail(i); else $('#detailDlg').close();
+        }
+    } catch (e) { $('#tMsg').hidden = false; $('#tMsg').textContent = errorText(e); }
+    finally { $('#tSave').disabled = false; }
 }
 
 async function deleteDrink(id) {
@@ -611,7 +673,8 @@ function drinkRow(d) {
         <span class="w-14 shrink-0 text-sm font-bold tabular-nums text-slate-500">${fmtTime(d.consumed_at)}</span>
         <span class="text-xl">${CAT_EMOJI[d.category] || '🥤'}</span>
         <span class="min-w-0 flex-1"><b class="block truncate text-slate-900 dark:text-white">${esc(d.name)}</b><span class="text-xs text-slate-500">${meta.join(' · ')}</span></span>
-        ${viewingSelf() ? `<button class="text-slate-400 hover:text-red-600" type="button" data-del="${d.id}" aria-label="Löschen">🗑️</button>` : ''}
+        ${viewingSelf() ? `<button class="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800" type="button" data-edit="${d.id}" aria-label="Zeitpunkt ändern" title="Zeitpunkt ändern">🕒</button>
+        <button class="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-zinc-800" type="button" data-del="${d.id}" aria-label="Löschen" title="Löschen">🗑️</button>` : ''}
     </li>`;
 }
 
@@ -692,27 +755,61 @@ function openDetail(i) {
     $('#dTitle').textContent = fmtDay(s.start);
     $('#dSub').textContent = `${fmtTime(s.start)} bis ${fmtWhen(s.end, s.start)} · Höchstwert ${nf(s.peak)} ‰ um ${fmtTime(s.peakAt)} · ${nf(s.grams, 0)} g Alkohol`;
     $('#dList').innerHTML = s.drinks.map(drinkRow).join('');
-    $('#detailDlg').showModal();
+    if (!$('#detailDlg').open) $('#detailDlg').showModal();
     if (detailChart) detailChart.destroy();
     detailChart = new Chart($('#detailChart'), chartConfig(s.curve, null));
 }
 
 /* ═════════ Erfassung ═════════ */
 let entryTimeTouched = false;
+/* Auswahl erst merken, eingetragen wird erst mit dem Button „Hinzufügen“ */
+let picked = null;
+function setPick(d) {
+    picked = d || null;
+    paintPick();
+}
+function clearPick() {
+    picked = null;
+    $('#stdSel').value = '';
+    paintPick();
+}
+function paintPick() {
+    const qi = picked ? QUICK.indexOf(picked) : -1;
+    document.querySelectorAll('[data-quick]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.quick === qi)));
+    if (qi >= 0) $('#stdSel').value = '';
+    const btn = $('#confirmAdd');
+    btn.disabled = !picked;
+    if (!picked) {
+        $('#confirmMain').textContent = 'Erst Getränk auswählen';
+        $('#confirmSub').hidden = true;
+        return;
+    }
+    const v = $('#entryTime').value, t = v ? +new Date(v) : Date.now();
+    $('#confirmMain').textContent = `➕ ${CAT_EMOJI[picked.category] || '🥤'} ${picked.name} hinzufügen`;
+    $('#confirmSub').hidden = false;
+    $('#confirmSub').textContent = `${fmtWhen(t)} Uhr${$('#foodToggle').checked ? ' · mit Essensgrundlage' : ''}`;
+}
 function buildEntry() {
-    $('#quickBtns').innerHTML = QUICK.map((q, i) => `<button class="chip" type="button" data-quick="${i}"><span class="text-2xl">${q.emoji}</span>${esc(q.name)}</button>`).join('');
+    $('#quickBtns').innerHTML = QUICK.map((q, i) => `<button class="chip" type="button" data-quick="${i}" aria-pressed="false"><span class="text-2xl">${q.emoji}</span>${esc(q.name)}</button>`).join('');
     const opt = (d, v) => `<option value="${v}">${esc(d.name)} · ${d.abv > 0 ? nf(d.abv, 1) + ' %' : nf(d.caffeine_mg, 0) + ' mg'}</option>`;
-    $('#stdSel').innerHTML = STANDARD.map((g, gi) => `<optgroup label="${esc(g.group)}">${g.items.map((d, i) => opt(d, `s${gi}_${i}`)).join('')}</optgroup>`).join('')
+    $('#stdSel').innerHTML = '<option value="">Getränk auswählen …</option>' + STANDARD.map((g, gi) => `<optgroup label="${esc(g.group)}">${g.items.map((d, i) => opt(d, `s${gi}_${i}`)).join('')}</optgroup>`).join('')
         + (S.custom.length ? `<optgroup label="Eigene">${S.custom.map(d => opt(d, 'c' + d.id)).join('')}</optgroup>` : '');
+    clearPick();
 }
 function stdDrink(v) {
+    if (!v) return null;
     if (v.startsWith('c')) return S.custom.find(d => 'c' + d.id === v);
     const [gi, i] = v.slice(1).split('_').map(Number);
     return STANDARD[gi] && STANDARD[gi].items[i];
 }
 
 document.addEventListener('click', e => {
-    const q = e.target.closest('[data-quick]'); if (q) return addDrink(QUICK[+q.dataset.quick]);
+    const q = e.target.closest('[data-quick]'); if (q) {
+        const d = QUICK[+q.dataset.quick];
+        return setPick(picked === d ? null : d);   /* nochmal tippen hebt die Auswahl auf */
+    }
+    const edit = e.target.closest('[data-edit]'); if (edit) return openTimeEdit(edit.dataset.edit);
+    if (e.target.closest('[data-close-time]')) return $('#timeDlg').close();
     const del = e.target.closest('[data-del]'); if (del) return deleteDrink(del.dataset.del);
     const ses = e.target.closest('[data-session]'); if (ses) return openDetail(+ses.dataset.session);
     const tab = e.target.closest('[data-tab]'); if (tab) {
@@ -721,8 +818,16 @@ document.addEventListener('click', e => {
         $('#dashView').hidden = S.tab !== 'dash'; $('#histView').hidden = S.tab !== 'hist';
     }
 });
-$('#stdAdd').onclick = () => { const d = stdDrink($('#stdSel').value); if (d) addDrink(d); };
-$('#entryTime').addEventListener('input', () => { entryTimeTouched = true; });
+$('#stdSel').onchange = () => setPick(stdDrink($('#stdSel').value));
+$('#confirmAdd').onclick = async () => {
+    if (!picked) return;
+    const btn = $('#confirmAdd'); btn.disabled = true;
+    const ok = await addDrink(picked);
+    if (!ok) paintPick();
+};
+$('#entryTime').addEventListener('input', () => { entryTimeTouched = true; paintPick(); });
+$('#foodToggle').addEventListener('change', paintPick);
+$('#timeForm').onsubmit = e => { e.preventDefault(); saveTimeEdit(); };
 $('#manualForm').onsubmit = async e => {
     e.preventDefault();
     const d = {
@@ -855,7 +960,7 @@ async function start(session) {
 /* Live: jede Minute neu berechnen (Pegel, Meilensteine, Chart) */
 setInterval(() => {
     if (!S.user || !S.body) return;
-    if (!entryTimeTouched) $('#entryTime').value = localInput(Date.now());
+    if (!entryTimeTouched) { $('#entryTime').value = localInput(Date.now()); paintPick(); }
     render();
 }, 60e3);
 
