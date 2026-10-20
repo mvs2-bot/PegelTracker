@@ -1,0 +1,15 @@
+{
+  "id": "pegeltracker-app",
+  "name": "PegelTracker",
+  "short_name": "PegelTracker",
+  "description": "Promille und Koffein im Blick",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#d97706",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
