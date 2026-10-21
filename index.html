@@ -611,11 +611,19 @@ async function saveTimeEdit() {
 
 async function deleteDrink(id) {
     if (!viewingSelf() || !confirm('Getränk löschen?')) return;
+    /* Bei offener Detailansicht merken, welche Getränke in der Session übrig bleiben */
+    const detailWasOpen = $('#detailDlg').open;
+    const old = detailWasOpen ? S.sessions.find(s => s.drinks.some(x => String(x.id) === String(id))) : null;
+    const rest = old ? old.drinks.filter(x => String(x.id) !== String(id)).map(x => String(x.id)) : [];
     try {
         check(await sb.from('pegel_drinks').delete().eq('id', id));
         S.drinks = S.drinks.filter(d => d.id !== id);
         recompute(); render();
-        if ($('#detailDlg').open) $('#detailDlg').close();
+        /* Detailansicht offen lassen und neu aufbauen; schließen nur, wenn die Session leer ist */
+        if (detailWasOpen) {
+            const i = S.sessions.findIndex(s => s.drinks.some(x => rest.includes(String(x.id))));
+            if (i >= 0) openDetail(i); else $('#detailDlg').close();
+        }
     } catch (e) { alert(errorText(e)); }
 }
 
