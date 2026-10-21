@@ -309,6 +309,7 @@ const MODEL = {
     ethanolDensity: 0.789,                /* g/ml */
     cafKa: 4.0,                           /* Aufnahme 1/h */
     cafHalfLifeH: 5,
+    cafZero: 15,                          /* mg, darunter gilt Koffein als abgeklungen (Session-Ende) */
     stepMin: 2
 };
 const MILESTONES = [0.8, 0.5, 0.3, 0.0];
@@ -416,17 +417,34 @@ function zeroTime(drinks, body) {
     return hit ? hit.t : start + 72 * H;
 }
 
-/* Trinksessions: beginnen mit dem ersten alkoholischen Getränk und laufen bis 0,0 ‰.
-   Alles, was vor diesem Zeitpunkt getrunken wird (auch Kaffee), gehört dazu. */
+/* Zeitpunkt, an dem das aktive Koffein nach der letzten Aufnahme unter MODEL.cafZero fällt */
+function cafEndTime(drinks) {
+    const caf = drinks.filter(d => +d.caffeine_mg > 0);
+    if (!caf.length) return null;
+    const start = +new Date(caf[0].consumed_at);
+    const last = Math.max(...caf.map(d => +new Date(d.consumed_at)));
+    /* Maximum liegt ~45 min nach der Aufnahme, erst danach nach dem Abklingen suchen */
+    const curve = simulate(caf.map(d => ({ ...d, abv: 0 })), null, last + H, last + 48 * H);
+    const hit = curve.find(p => p.caf < MODEL.cafZero);
+    return hit ? Math.max(hit.t, start + H) : last + 48 * H;
+}
+const startsSession = d => d.abv > 0 || +d.caffeine_mg > 0;
+function sessionEnd(drinks, body) {
+    return Math.max(zeroTime(drinks, body) || 0, cafEndTime(drinks) || 0);
+}
+
+/* Sessions: beginnen mit dem ersten Getränk mit Alkohol oder Koffein und laufen,
+   bis 0,0 ‰ erreicht und das Koffein abgeklungen ist. Alles andere, was in diesem
+   Zeitraum getrunken wird, gehört dazu. */
 function buildSessions(drinks, body) {
     const sorted = [...drinks].sort((a, b) => new Date(a.consumed_at) - new Date(b.consumed_at));
     const sessions = []; let cur = null;
-    for (const d of sorted.filter(d => d.abv > 0)) {
+    for (const d of sorted.filter(startsSession)) {
         const t = +new Date(d.consumed_at);
-        if (cur && t < cur.end) { cur.drinks.push(d); cur.end = zeroTime(cur.drinks, body); }
-        else { cur = { start: t, drinks: [d] }; cur.end = zeroTime(cur.drinks, body); sessions.push(cur); }
+        if (cur && t < cur.end) { cur.drinks.push(d); cur.end = sessionEnd(cur.drinks, body); }
+        else { cur = { start: t, drinks: [d] }; cur.end = sessionEnd(cur.drinks, body); sessions.push(cur); }
     }
-    for (const d of sorted.filter(d => !(d.abv > 0))) {
+    for (const d of sorted.filter(d => !startsSession(d))) {
         const t = +new Date(d.consumed_at);
         const s = sessions.find(s => t >= s.start - 2 * H && t <= s.end);
         if (s) s.drinks.push(d);
@@ -436,6 +454,10 @@ function buildSessions(drinks, body) {
         s.curve = simulate(s.drinks, body, s.start, s.end + 30 * MIN);
         const peak = s.curve.reduce((m, p) => p.bac > m.bac ? p : m, s.curve[0]);
         s.peak = peak.bac; s.peakAt = peak.t;
+        const cafPeak = s.curve.reduce((m, p) => p.caf > m.caf ? p : m, s.curve[0]);
+        s.peakCaf = cafPeak.caf; s.peakCafAt = cafPeak.t;
+        s.hasAlc = s.drinks.some(d => d.abv > 0);
+        s.alcEnd = zeroTime(s.drinks, body);
         s.grams = s.drinks.reduce((g, d) => g + grams(d), 0);
         s.caffeine = s.drinks.reduce((c, d) => c + (+d.caffeine_mg || 0), 0);
     }
@@ -444,8 +466,9 @@ function buildSessions(drinks, body) {
 
 /* Wann fällt der Pegel nach dem Höchstwert unter eine Schwelle? */
 function milestoneTime(s, level) {
+    if (!s.hasAlc) return null;
     const after = s.curve.filter(p => p.t >= s.peakAt);
-    if (level === 0) return s.end;
+    if (level === 0) return s.alcEnd;
     if (s.peak <= level) return null;
     const p = after.find(p => p.bac <= level);
     return p ? p.t : null;
@@ -630,8 +653,11 @@ function render() {
     $('#bacNow').style.color = s ? bacColor(cur.bac) : '';
     $('#bacTrend').textContent = !s ? '' : soon.bac > cur.bac + 0.005 ? '↗' : cur.bac > 0 ? '↘' : '';
     $('#bacTrend').style.color = bacColor(cur.bac);
-    $('#bacHint').textContent = s ? bacText(cur.bac) : 'Keine laufende Session.';
-    $('#statPeak').textContent = s ? `${nf(s.peak)} ‰ · ${fmtTime(s.peakAt)}` : '–';
+    $('#bacHint').textContent = !s ? 'Keine laufende Session.'
+        : s.hasAlc ? bacText(cur.bac) : '☕ Koffein-Session – noch kein Alkohol.';
+    $('#statPeak').textContent = !s ? '–'
+        : s.hasAlc ? `${nf(s.peak)} ‰ · ${fmtTime(s.peakAt)}`
+        : `${nf(s.peakCaf, 0)} mg · ${fmtTime(s.peakCafAt)}`;
     $('#statStart').textContent = s ? `${fmtWhen(s.start, now)} (${fmtDur(now - s.start)})` : '–';
     $('#statCount').textContent = s ? s.drinks.length : '–';
     $('#statGrams').textContent = s ? `${nf(s.grams, 0)} g` : '–';
@@ -649,10 +675,10 @@ function render() {
     /* Meilensteine */
     $('#milestones').innerHTML = MILESTONES.map(level => {
         const t = s ? milestoneTime(s, level) : null;
-        const reached = s && t != null && t <= now;
-        const never = s && t == null;
+        const reached = s && s.hasAlc && t != null && t <= now;
+        const never = s && s.hasAlc && t == null;
         const label = level === 0 ? 'Nüchtern' : level === 0.5 ? 'Grenze Auto' : level === 0.3 ? 'Untere Grenze' : 'Alte Grenze';
-        const body = !s ? '<span class="text-slate-400">–</span>'
+        const body = !s || !s.hasAlc ? '<span class="text-slate-400">–</span>'
             : never ? '<span class="text-sm text-slate-400">nicht erreicht</span>'
             : reached ? `<span class="font-extrabold text-emerald-700 dark:text-emerald-400">✓ ${fmtWhen(t, now)}</span>`
             : `<span class="text-xl font-extrabold tabular-nums text-slate-900 dark:text-white">${fmtWhen(t, now)}</span><span class="block text-xs text-slate-500">in ${fmtDur(t - now)}</span>`;
@@ -682,7 +708,7 @@ function drinkRow(d) {
     </li>`;
 }
 
-function chartConfig(curve, nowT) {
+function chartConfig(curve, nowT, hasAlc = true) {
     const grid = isDark() ? '#27272a' : '#e2e8f0', tick = isDark() ? '#a1a1aa' : '#64748b';
     const nowLine = {
         id: 'now', afterDatasetsDraw(c) {
@@ -695,6 +721,7 @@ function chartConfig(curve, nowT) {
     };
     const thresholds = {
         id: 'thresholds', beforeDatasetsDraw(c) {
+            if (!hasAlc) return;
             const g = c.ctx, y = c.scales.y; g.save(); g.setLineDash([2, 4]); g.font = '10px "Plus Jakarta Sans"';
             for (const l of [0.3, 0.5, 0.8, 1.1]) {
                 if (l > y.max) continue; const py = y.getPixelForValue(l);
@@ -708,9 +735,9 @@ function chartConfig(curve, nowT) {
     return {
         type: 'line',
         data: { datasets: [
-            { label: 'Promille', data: curve.map(p => ({ x: p.t, y: +p.bac.toFixed(3) })), borderColor: '#d97706', borderWidth: 3, pointRadius: 0, tension: 0.25, yAxisID: 'y',
+            { label: 'Promille', data: curve.map(p => ({ x: p.t, y: +p.bac.toFixed(3) })), borderColor: '#d97706', borderWidth: 3, pointRadius: 0, tension: 0.25, yAxisID: 'y', hidden: !hasAlc,
               segment: { borderDash: ctx => nowT != null && ctx.p0.parsed.x >= nowT ? [6, 4] : undefined } },
-            { label: 'Koffein', data: curve.map(p => ({ x: p.t, y: Math.round(p.caf) })), borderColor: '#78350f55', backgroundColor: '#92400e22', fill: true, borderWidth: 1, pointRadius: 0, tension: 0.3, yAxisID: 'y1' }
+            { label: 'Koffein', data: curve.map(p => ({ x: p.t, y: Math.round(p.caf) })), borderColor: hasAlc ? '#78350f55' : '#92400e', backgroundColor: hasAlc ? '#92400e22' : '#92400e33', fill: true, borderWidth: 1, pointRadius: 0, tension: 0.3, yAxisID: 'y1' }
         ] },
         options: {
             responsive: true, maintainAspectRatio: false, animation: false, parsing: false,
@@ -721,8 +748,8 @@ function chartConfig(curve, nowT) {
             } } },
             scales: {
                 x: { type: 'linear', min: curve[0].t, max: curve[curve.length - 1].t, grid: { color: grid }, ticks: { color: tick, maxTicksLimit: 8, callback: v => fmtTime(v) } },
-                y: { min: 0, suggestedMax: 1, grid: { color: grid }, ticks: { color: tick, callback: v => nf(v, 1) } },
-                y1: { position: 'right', min: 0, max: Math.ceil(maxCaf * 1.4 / 50) * 50, grid: { display: false }, ticks: { color: tick, maxTicksLimit: 4, callback: v => v + ' mg' } }
+                y: { display: hasAlc, min: 0, suggestedMax: 1, grid: { color: grid }, ticks: { color: tick, callback: v => nf(v, 1) } },
+                y1: { position: hasAlc ? 'right' : 'left', min: 0, max: Math.ceil(maxCaf * 1.4 / 50) * 50, grid: { display: !hasAlc, color: grid }, ticks: { color: tick, maxTicksLimit: 4, callback: v => v + ' mg' } }
             }
         },
         plugins: [nowLine, thresholds]
@@ -734,7 +761,7 @@ function renderLiveChart(s, now) {
     $('#liveChart').parentElement.hidden = !s;
     if (liveChart) { liveChart.destroy(); liveChart = null; }
     if (!s) return;
-    liveChart = new Chart($('#liveChart'), chartConfig(s.curve, now));
+    liveChart = new Chart($('#liveChart'), chartConfig(s.curve, now, s.hasAlc));
 }
 
 function renderHistory(now) {
@@ -746,10 +773,11 @@ function renderHistory(now) {
             <div class="flex items-start justify-between gap-2">
                 <div><b class="text-slate-900 dark:text-white">${fmtDay(s.start)}</b>
                 <div class="text-sm text-slate-500">${fmtTime(s.start)} bis ${fmtWhen(s.end, s.start)} · ${fmtDur(s.end - s.start)}</div></div>
-                <span class="rounded-full px-2.5 py-1 text-sm font-extrabold text-white" style="background:${bacColor(s.peak)}">${nf(s.peak)} ‰</span>
+                ${s.hasAlc ? `<span class="rounded-full px-2.5 py-1 text-sm font-extrabold text-white" style="background:${bacColor(s.peak)}">${nf(s.peak)} ‰</span>`
+                    : `<span class="rounded-full px-2.5 py-1 text-sm font-extrabold text-white" style="background:#92400e">☕ ${nf(s.peakCaf, 0)} mg</span>`}
             </div>
             <div class="mt-2 text-sm">${s.drinks.map(d => CAT_EMOJI[d.category] || '🥤').join(' ')}</div>
-            <div class="mt-1 text-xs text-slate-500">${s.drinks.length} Getränke · ${nf(s.grams, 0)} g Alkohol${s.caffeine ? ` · ${nf(s.caffeine, 0)} mg Koffein` : ''}</div>
+            <div class="mt-1 text-xs text-slate-500">${s.drinks.length} Getränke${s.hasAlc ? ` · ${nf(s.grams, 0)} g Alkohol` : ''}${s.caffeine ? ` · ${nf(s.caffeine, 0)} mg Koffein, max. ${nf(s.peakCaf, 0)} mg aktiv` : ''}</div>
         </button>`;
     }).join('');
 }
@@ -757,11 +785,13 @@ function renderHistory(now) {
 function openDetail(i) {
     const s = S.sessions[i]; if (!s) return;
     $('#dTitle').textContent = fmtDay(s.start);
-    $('#dSub').textContent = `${fmtTime(s.start)} bis ${fmtWhen(s.end, s.start)} · Höchstwert ${nf(s.peak)} ‰ um ${fmtTime(s.peakAt)} · ${nf(s.grams, 0)} g Alkohol`;
+    $('#dSub').textContent = `${fmtTime(s.start)} bis ${fmtWhen(s.end, s.start)}`
+        + (s.hasAlc ? ` · Höchstwert ${nf(s.peak)} ‰ um ${fmtTime(s.peakAt)} · ${nf(s.grams, 0)} g Alkohol` : '')
+        + (s.caffeine ? ` · max. ${nf(s.peakCaf, 0)} mg Koffein um ${fmtTime(s.peakCafAt)}` : '');
     $('#dList').innerHTML = s.drinks.map(drinkRow).join('');
     if (!$('#detailDlg').open) $('#detailDlg').showModal();
     if (detailChart) detailChart.destroy();
-    detailChart = new Chart($('#detailChart'), chartConfig(s.curve, null));
+    detailChart = new Chart($('#detailChart'), chartConfig(s.curve, null, s.hasAlc));
 }
 
 /* ═════════ Erfassung ═════════ */

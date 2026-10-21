@@ -37,7 +37,8 @@ Die Datenbank setzt das selbst durch (Row Level Security), nicht nur die Oberfl�
   wie bei Widmark, darunter langsamer. Alle Konstanten stehen oben im Skript in `MODEL`.
 - **Koffein:** Ein-Kompartiment-Modell (Maximum nach ca. 45 min, Halbwertszeit 5 h).
   Angezeigt werden aktives Koffein, Tagesmenge und Verlauf im Chart; den Promillewert beeinflusst es nicht.
-- **Trinksession:** beginnt mit dem ersten alkoholischen Getränk und läuft, bis rechnerisch 0,0 ‰ erreicht sind.
-  Alles, was davor getrunken wird, gehört dazu. Sessions werden aus den Getränken berechnet, nicht gespeichert.
+- **Session:** beginnt mit dem ersten Getränk mit Alkohol oder Koffein und läuft, bis rechnerisch 0,0 ‰ erreicht
+  und das aktive Koffein unter 15 mg gefallen ist. Alles, was in diesem Zeitraum getrunken wird, gehört dazu.
+  Reine Koffein-Sessions zeigen im Verlauf nur die Koffeinkurve und im Log das maximale aktive Koffein. Sessions werden aus den Getränken berechnet, nicht gespeichert.
 
 Alle Werte sind Schätzungen und nicht geeignet, die Fahrtüchtigkeit zu beurteilen.
