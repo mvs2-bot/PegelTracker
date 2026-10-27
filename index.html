@@ -17,11 +17,11 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         /* Apple-Designsprache wie im Dashboard (mvs2-bot.github.io), „Zuhause“ und DailyMind.
-           Eigener Akzent: Petrol (Wasserpegel). Koffein in Braun, Pegelstufen von Grün bis Rot. */
+           Eigener Akzent: Gold (wie ein volles Glas). Text und Symbole im dunkleren Gold, Flächen in hellem Gold mit dunkler Schrift. Koffein in Braun, Pegelstufen von Grün bis Rot. */
         :root {
             --bg: #f2f2f7; --card: #fff; --well: #f2f2f7; --hover: #e9e9ef; --line: #e2e2e7; --sep: rgba(60, 60, 67, .14);
             --ink: #1c1c1e; --text: #3a3a3c; --mute: #6c6c70;
-            --p1: #00788a; --p1-soft: #e2f2f4; --on-p1: #fff;
+            --p1: #8a6a00; --p1-fill: #f5c400; --p1-soft: #fdf5d6; --on-p1: #1c1c1e;
             --caf: #8a5a2b; --caf-soft: #f6ede3;
             --ok: #1d7a34; --ok-soft: #e5f4e8; --danger: #d70015; --danger-soft: #ffe6e8; --warn: #9a5b00; --warn-soft: #fff1e0;
             /* Pegelstufen: 0 nüchtern · unter 0,3 · ab 0,3 · ab 0,5 · ab 1,1 ‰ */
@@ -36,7 +36,7 @@
         .dark {
             color-scheme: dark; --bg: #000; --card: #1c1c1e; --well: #2c2c2e; --hover: #3a3a3c; --line: #38383a; --sep: rgba(84, 84, 88, .55);
             --ink: #f5f5f7; --text: #d1d1d6; --mute: #98989f;
-            --p1: #5ac8d6; --p1-soft: #0f2a2e; --on-p1: #032a30;
+            --p1: #ffd60a; --p1-fill: #ffd60a; --p1-soft: #2e2706; --on-p1: #1c1c1e;
             --caf: #d4a373; --caf-soft: #2e2216;
             --ok: #30d158; --ok-soft: #0f2a16; --danger: #ff6961; --danger-soft: #3a1412; --warn: #ffb340; --warn-soft: #33240b;
             --lv0: #30d158; --lv1: #ffd60a; --lv2: #ffb340; --lv3: #ff8a3d; --lv4: #ff6961;
@@ -209,12 +209,12 @@
         .switch input:checked + span::after { transform: translateX(20px); }
         .switch input:focus-visible + span { outline: 2px solid var(--p1); outline-offset: 2px; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 16px; font-size: 14px; font-weight: 600; border: 0; border-radius: 12px;
-            background: var(--p1); color: var(--on-p1); transition: filter .15s; }
+            background: var(--p1-fill); color: var(--on-p1); transition: filter .15s; }
         .btn:hover { filter: brightness(1.06); }
         .btn:disabled { opacity: .5; }
         .btn.ghost { background: var(--well); color: var(--ink); }
         .btn-add { display: flex; width: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 52px; margin-bottom: 14px; padding: 8px 16px;
-            border: 0; border-radius: 14px; background: var(--p1); color: var(--on-p1); font-size: 15px; font-weight: 600; transition: filter .15s, transform .1s; }
+            border: 0; border-radius: 14px; background: var(--p1-fill); color: var(--on-p1); font-size: 15px; font-weight: 600; transition: filter .15s, transform .1s; }
         .btn-add:hover { filter: brightness(1.06); }
         .btn-add:active { transform: scale(.98); }
         .btn-add:disabled { background: var(--well); color: var(--mute); filter: none; transform: none; }
@@ -262,7 +262,7 @@
         .wp-grid + .eyebrow { margin-top: 12px; }
         .wp-cell { min-height: 34px; border: 0; border-radius: 8px; background: var(--card); color: var(--ink); font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; transition: background .15s; }
         .wp-cell:hover { background: var(--hover); }
-        .wp-cell[aria-pressed="true"] { background: var(--p1); color: var(--on-p1); font-weight: 600; }
+        .wp-cell[aria-pressed="true"] { background: var(--p1-fill); color: var(--on-p1); font-weight: 600; }
 
         /* Historie */
         .hist { display: grid; gap: 12px; }
@@ -1270,7 +1270,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#meMen
 /* ───────── Eigenes Profilbild (wie im Quest Log) ─────────
    Das Bild liegt im privaten Bucket "avatars", der Pfad steht in overall_profiles.avatar_path (ein Bild für alle Apps).
    Angezeigt wird es über einen kurzlebigen signierten Link. Ohne Bild: Personen-Symbol im Button, Initialen im Menü. */
-const AVA_COLORS = ['#00788a', '#8a5a2b', '#5856d6', '#0066cc', '#a2453a', '#4a7356'];
+const AVA_COLORS = ['#8a6a00', '#8a5a2b', '#5856d6', '#0066cc', '#a2453a', '#4a7356'];
 function initials(name) { return String(name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'; }
 function avaHtml(name, url) {
     if (url) return `<img src="${esc(url)}" alt="">`;
