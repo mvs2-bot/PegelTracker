@@ -1,4 +1,4 @@
-# 🍻 PegelTracker
+# PegelTracker
 
 Single-File-Web-App (PWA) für Promille und Koffein, gehostet über GitHub Pages.
 Nutzt das gemeinsame Supabase-Core-Projekt (Login und Profil wie TravelBase und Questlog).
@@ -7,10 +7,20 @@ Nutzt das gemeinsame Supabase-Core-Projekt (Login und Profil wie TravelBase und 
 
 | Datei | Inhalt |
 | --- | --- |
-| `index.html` | die komplette App (Tailwind CSS, Chart.js, supabase-js über CDN) |
+| `index.html` | die komplette App (eigenes CSS, Chart.js und supabase-js über CDN) |
 | `supabase/pegeltracker_core.sql` | Tabellen, Zugriffsregeln und RPC im Core-Projekt |
 | `manifest.json`, `sw.js`, `icon.svg` | PWA: installierbar, App-Hülle offline verfügbar |
 | `icons/` | App-Icons (Startbildschirm, maskable, Apple, Favicon) |
+
+## Design
+
+Gleiche Apple-Designsprache wie das Dashboard (mvs2-bot.github.io), „Zuhause“ und DailyMind: Systemschrift (SF),
+Schriften 12–22 px (Basis 14 px), weiße Karten auf `#f2f2f7`, im Dunkeln dunkelgraue Karten (`#1c1c1e`) auf Schwarz,
+Linien-Symbole statt Emojis (SVG-Sprite oben im `<body>`). Alle Farben stehen als CSS-Variablen in `:root` und `.dark`.
+
+- Akzent Petrol `#00788a` (dunkel `#5ac8d6`), Koffein Braun `#8a5a2b` (dunkel `#d4a373`).
+- Pegelstufen `--lv0` … `--lv4` von Grün (nüchtern) bis Rot (ab 1,1 ‰).
+- Bei Änderungen an Dateien die Cache-Version in `sw.js` hochzählen.
 
 ## Einrichtung
 
