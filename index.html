@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="de"><head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#d97706">
+    <meta name="theme-color" content="#f2f2f7">
     <script>(function(){try{if(localStorage.getItem('overall-theme')==='dark'){document.documentElement.classList.add('dark');}}catch(e){}})();</script>
     <title>PegelTracker</title>
     <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -13,223 +13,484 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="PegelTracker">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: { extend: {
-                fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] },
-                colors: { brand: { 50: '#fffbeb', 100: '#fef3c7', 300: '#fcd34d', 500: '#f59e0b', 600: '#d97706', 700: '#b45309' } }
-            } }
-        };
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <style type="text/tailwindcss">
+    <style>
+        /* Apple-Designsprache wie im Dashboard (mvs2-bot.github.io), „Zuhause“ und DailyMind.
+           Eigener Akzent: Petrol (Wasserpegel). Koffein in Braun, Pegelstufen von Grün bis Rot. */
+        :root {
+            --bg: #f2f2f7; --card: #fff; --well: #f2f2f7; --hover: #e9e9ef; --line: #e2e2e7; --sep: rgba(60, 60, 67, .14);
+            --ink: #1c1c1e; --text: #3a3a3c; --mute: #6c6c70;
+            --p1: #00788a; --p1-soft: #e2f2f4; --on-p1: #fff;
+            --caf: #8a5a2b; --caf-soft: #f6ede3;
+            --ok: #1d7a34; --ok-soft: #e5f4e8; --danger: #d70015; --danger-soft: #ffe6e8; --warn: #9a5b00; --warn-soft: #fff1e0;
+            /* Pegelstufen: 0 nüchtern · unter 0,3 · ab 0,3 · ab 0,5 · ab 1,1 ‰ */
+            --lv0: #1d7a34; --lv1: #8a6d00; --lv2: #b25000; --lv3: #c93400; --lv4: #d70015;
+            --radius: 18px; --radius-s: 12px; --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 4px 14px rgba(0, 0, 0, .04);
+            --pop: 0 12px 40px rgba(0, 0, 0, .18), 0 0 0 .5px rgba(0, 0, 0, .06);
+            --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            /* Namen, die ios-nav.js erwartet */
+            --border: var(--line); --accent: var(--p1); --card-hover: var(--hover); --muted: var(--mute);
+            color-scheme: light;
+        }
+        .dark {
+            color-scheme: dark; --bg: #000; --card: #1c1c1e; --well: #2c2c2e; --hover: #3a3a3c; --line: #38383a; --sep: rgba(84, 84, 88, .55);
+            --ink: #f5f5f7; --text: #d1d1d6; --mute: #98989f;
+            --p1: #5ac8d6; --p1-soft: #0f2a2e; --on-p1: #032a30;
+            --caf: #d4a373; --caf-soft: #2e2216;
+            --ok: #30d158; --ok-soft: #0f2a16; --danger: #ff6961; --danger-soft: #3a1412; --warn: #ffb340; --warn-soft: #33240b;
+            --lv0: #30d158; --lv1: #ffd60a; --lv2: #ffb340; --lv3: #ff8a3d; --lv4: #ff6961;
+            --shadow: none; --pop: 0 16px 48px rgba(0, 0, 0, .6), 0 0 0 .5px rgba(255, 255, 255, .08);
+        }
         [hidden] { display: none !important; }
-        body { -webkit-tap-highlight-color: transparent; }
-        .card { @apply bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm dark:shadow-none; }
-        .chip { @apply flex flex-col items-center justify-center gap-0.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-950 px-2 py-3 text-sm font-bold text-slate-800 dark:text-zinc-100 hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-zinc-800 active:scale-95 transition disabled:opacity-50; }
-        .inp { @apply w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-950 px-3 py-2.5 text-base text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-brand-500; }
-        .lbl { @apply flex flex-col gap-1 text-xs font-bold text-slate-500 dark:text-zinc-400; }
-        .btn { @apply rounded-xl bg-brand-600 px-4 py-2.5 font-extrabold text-white hover:bg-brand-700 disabled:opacity-60 dark:text-zinc-950 dark:bg-brand-500; }
-        .btn-ghost { @apply rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-bold text-slate-700 dark:text-zinc-200 hover:border-brand-500; }
-        /* Header-Buttons, Admin-Umschalter und Profil-Menü wie im Quest Log (gleiche Maße, Form und Schrift) */
-        .icon-btn { background: #fff; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1.3rem; padding: 7px 11px; line-height: 1; color: #0f172a; box-shadow: 0 4px 12px rgba(30, 27, 46, .06); }
-        .icon-btn:hover { border-color: #f59e0b; }
-        .dark .icon-btn { background: #18181b; border-color: #3f3f46; color: #fff; box-shadow: none; }
-        .me-btn { display: inline-flex; align-items: center; justify-content: center; }
-        .me-btn.has-photo { position: relative; overflow: hidden; }
-        .me-btn.has-photo::before { content: '👤'; visibility: hidden; }
-        .me-btn img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
-        .hdr-sel { height: calc(1.3rem + 18px); background-color: #fff; border: 2px solid #e2e8f0; border-radius: 10px; padding: 0 11px; -webkit-appearance: none; appearance: none; cursor: pointer; font-size: .92rem; font-weight: 700; line-height: 1; color: #0f172a; box-shadow: 0 4px 12px rgba(30, 27, 46, .06); max-width: 9.5rem; }
-        .hdr-sel:hover { border-color: #f59e0b; }
-        .dark .hdr-sel { background-color: #18181b; border-color: #3f3f46; color: #fff; box-shadow: none; }
-        .me-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 200; min-width: 240px; max-width: calc(100vw - 32px); background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 12px 32px rgba(30, 27, 46, .18); padding: 8px; }
-        .dark .me-menu { background: #18181b; border-color: #3f3f46; box-shadow: 0 12px 32px rgba(0, 0, 0, .6); }
-        .me-head { display: flex; gap: 10px; align-items: center; padding: 8px 10px 12px; border-bottom: 1px solid #e2e8f0; margin-bottom: 6px; }
-        .dark .me-head { border-color: #3f3f46; }
+        * { box-sizing: border-box; }
+        html { background: var(--bg); -webkit-text-size-adjust: 100%; }
+        body { margin: 0; min-height: 100vh; font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.45; letter-spacing: -.005em;
+            -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+        ::selection { background: color-mix(in srgb, var(--p1) 28%, transparent); color: var(--ink); }
+        button, input, select, textarea { font: inherit; color: inherit; }
+        button { cursor: pointer; }
+        button:disabled { cursor: default; }
+        :focus-visible { outline: 2px solid var(--p1); outline-offset: 2px; }
+        h1, h2, h3, p, ul, dl, dd { margin: 0; padding: 0; }
+        ul { list-style: none; }
+        a { color: var(--p1); }
+        .ic { width: 1.25em; height: 1.25em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .num { font-variant-numeric: tabular-nums; }
+        .wrap { max-width: 1040px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(48px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+
+        /* Kopf: klein, ruhig, Systemmaterial beim Scrollen */
+        header { position: sticky; top: 0; z-index: 30; padding-top: env(safe-area-inset-top, 0px);
+            background: color-mix(in srgb, var(--bg) 82%, transparent); -webkit-backdrop-filter: saturate(1.8) blur(18px); backdrop-filter: saturate(1.8) blur(18px); }
+        header .wrap { padding-bottom: 0; }
+        .bar { display: flex; align-items: center; gap: 12px; padding-block: 12px 10px; }
+        .bar .logo { width: 36px; height: 36px; flex: none; border-radius: 9px; }
+        .bar .head { flex: 1; min-width: 0; }
+        h1 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); line-height: 1.15; }
+        .sub { font-size: 12px; font-weight: 500; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .acts { display: flex; align-items: center; gap: 8px; flex: none; }
+        .icon-btn { position: relative; overflow: hidden; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--card); color: var(--ink); box-shadow: var(--shadow);
+            display: inline-grid; place-items: center; padding: 0; transition: background .15s; }
+        .icon-btn:hover { background: var(--hover); }
+        .icon-btn .ic { width: 18px; height: 18px; }
+        .icon-btn img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+        .hdr-sel { height: 36px; max-width: 9.5rem; padding: 0 30px 0 14px; border: 0; border-radius: 999px; background-color: var(--card); box-shadow: var(--shadow);
+            font-size: 13px; font-weight: 600; color: var(--ink); -webkit-appearance: none; appearance: none; cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; }
+        @media (max-width: 420px) { .bar .logo { display: none; } }
+
+        /* Kontomenü */
+        .me { position: relative; }
+        .me-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; width: 280px; max-width: calc(100vw - 32px); padding: 6px; border-radius: 14px; box-shadow: var(--pop); background: var(--card); color: var(--text); }
+        .me-head { display: flex; gap: 10px; align-items: center; padding: 8px 10px 10px; margin-bottom: 4px; border-bottom: 1px solid var(--sep); min-width: 0; }
         .me-head > div { min-width: 0; }
-        .me-head b { display: block; color: #0f172a; font-size: .95rem; }
-        .dark .me-head b { color: #fff; }
-        .me-item { display: flex; width: 100%; align-items: center; gap: 10px; background: none; border: 0; border-radius: 8px; padding: 10px 12px; font-size: .92rem; font-weight: 700; color: #0f172a; text-align: left; text-decoration: none; }
-        .dark .me-item { color: #fff; }
-        .me-item:hover, .me-item:focus-visible { background: #f1f5f9; outline: none; }
-        .dark .me-item:hover, .dark .me-item:focus-visible { background: #27272a; }
-        .me-item.danger { color: #dc2626; }
-        .dark .me-item.danger { color: #f87171; }
-        .ava { width: 40px; height: 40px; flex: 0 0 auto; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; background: #fef3c7; border: 2px solid #e2e8f0; }
-        .dark .ava { border-color: #3f3f46; }
+        .me-head b { display: block; font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ava { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--well); }
         .ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .ava .ini { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: .9rem; letter-spacing: .02em; }
-        .tab { @apply flex-1 rounded-lg px-4 py-2 text-sm font-extrabold text-slate-500 dark:text-zinc-400; }
-        .tab[aria-selected="true"] { @apply bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm; }
-        .ms { @apply rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 p-3; }
-        .ms.done { @apply border-emerald-300 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40; }
-        .chip[aria-pressed="true"] { @apply border-brand-500 bg-brand-100 ring-2 ring-brand-500 dark:bg-zinc-800; }
-        .btn-add { @apply flex w-full flex-col items-center justify-center gap-0.5 rounded-xl bg-brand-600 px-4 py-3.5 text-lg font-extrabold text-white shadow-md hover:bg-brand-700 active:scale-[.98] transition dark:bg-brand-500 dark:text-zinc-950; }
-        .btn-add:disabled { @apply cursor-not-allowed bg-slate-200 text-slate-400 shadow-none active:scale-100 dark:bg-zinc-800 dark:text-zinc-500; }
+        .ava .ini { width: 100%; height: 100%; display: grid; place-items: center; color: #fff; font-size: 14px; font-weight: 600; }
+        .me-item { display: flex; width: 100%; align-items: center; gap: 10px; min-height: 40px; padding: 8px 10px; border: 0; border-radius: 8px;
+            background: none; color: var(--ink); font-size: 14px; font-weight: 500; text-align: left; text-decoration: none; }
+        .me-item .ic { width: 18px; height: 18px; color: var(--mute); }
+        .me-item:hover, .me-item:focus-visible { background: var(--hover); outline: none; }
+        .me-item small { margin-left: auto; font-size: 11px; color: var(--mute); }
+        .me-item.danger, .me-item.danger .ic { color: var(--danger); }
+        .me-sep { height: 1px; margin: 4px 6px; background: var(--sep); }
+
+        /* Segmente wie in iOS */
+        .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: color-mix(in srgb, var(--mute) 14%, transparent); border-radius: 9px; padding: 2px; gap: 2px; }
+        .seg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; background: none; border-radius: 7px; padding: 6px 12px; min-height: 32px;
+            font-size: 13px; font-weight: 500; color: var(--ink); transition: background .15s; }
+        .seg button[aria-selected="true"] { background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); font-weight: 600; }
+        .dark .seg button[aria-selected="true"] { background: #636366; }
+        .seg .ic { width: 15px; height: 15px; }
+        .tabs { max-width: 420px; margin: 8px auto 18px; }
+
+        /* Hinweisleiste */
+        .banner { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 14px; padding: 12px 14px; border-radius: var(--radius-s); background: var(--warn-soft); color: var(--ink); font-size: 13px; }
+        .banner .ic { width: 18px; height: 18px; color: var(--warn); margin-top: 1px; }
+        .banner a { color: inherit; font-weight: 600; }
+
+        /* Karten */
+        .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
+        .card h2, .card h3 { font-size: 16px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); line-height: 1.3; }
+        .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .card-head h3 { flex: 1; min-width: 0; }
+        .badge-ic { flex: none; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--p1-soft); color: var(--p1); }
+        .badge-ic .ic { width: 16px; height: 16px; }
+        .badge-ic.caf { background: var(--caf-soft); color: var(--caf); }
+        .eyebrow { font-size: 12px; font-weight: 600; color: var(--mute); }
+        .hint { font-size: 12px; color: var(--mute); }
+        .cols { display: grid; gap: 14px; }
+        .col { display: grid; gap: 14px; align-content: start; min-width: 0; }
+        @media (min-width: 1024px) {
+            .cols { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; }
+            .col { gap: 16px; }
+            .col.side > .card { position: sticky; top: 76px; }
+        }
+
+        /* Aktueller Pegel */
+        .now-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+        .bac { display: flex; align-items: baseline; gap: 6px; margin-top: 2px; }
+        .bac #bacNow { font-size: 34px; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+        .bac .unit { font-size: 20px; font-weight: 500; color: var(--mute); }
+        .bac #bacTrend { font-size: 20px; font-weight: 600; }
+        #bacHint { margin-top: 2px; font-size: 13px; font-weight: 500; color: var(--mute); }
+        .stats { display: grid; grid-template-columns: auto auto; gap: 3px 18px; font-size: 13px; }
+        .stats dt { color: var(--mute); }
+        .stats dd { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; }
+        .caf-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding: 12px; border-radius: var(--radius-s); background: var(--well); }
+        .caf-row .main { min-width: 0; flex: 1; }
+        .caf-row b { font-size: 14px; font-weight: 600; color: var(--ink); }
+        .pill { display: inline-block; margin-left: 4px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; vertical-align: 1px; }
+        .pill.low { background: color-mix(in srgb, var(--mute) 16%, transparent); color: var(--text); }
+        .pill.mid { background: var(--ok-soft); color: var(--ok); }
+        .pill.high { background: var(--warn-soft); color: var(--warn); }
+        .pill.max { background: var(--danger-soft); color: var(--danger); }
+
+        /* Meilensteine */
+        .ms-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        @media (min-width: 640px) { .ms-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+        .ms { padding: 10px 12px; border-radius: var(--radius-s); background: var(--well); }
+        .ms.done { background: var(--ok-soft); }
+        .ms .k { font-size: 12px; font-weight: 500; color: var(--mute); }
+        .ms .v { margin-top: 4px; font-size: 13px; color: var(--mute); }
+        .ms .t { display: block; font-size: 18px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+        .ms .in { display: block; font-size: 12px; color: var(--mute); }
+        .ms .ok { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: var(--ok); font-variant-numeric: tabular-nums; }
+        .ms .ok .ic { width: 15px; height: 15px; stroke-width: 2.2; }
+
+        /* Verlauf */
+        .legend { display: flex; gap: 12px; font-size: 12px; color: var(--mute); }
+        .legend span { display: inline-flex; align-items: center; gap: 5px; }
+        .legend i { width: 10px; height: 3px; border-radius: 2px; background: var(--p1); }
+        .legend i.caf { height: 10px; border-radius: 3px; background: color-mix(in srgb, var(--caf) 35%, transparent); }
+        .chart { position: relative; height: 260px; }
+        .empty { padding: 36px 8px; text-align: center; font-size: 13px; color: var(--mute); }
+
+        /* Getränkeliste */
+        .drinks li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--sep); }
+        .drinks li:first-child { border-top: 0; }
+        .drinks .time { width: 42px; flex: none; font-size: 13px; font-weight: 500; color: var(--mute); font-variant-numeric: tabular-nums; }
+        .drinks .txt { flex: 1; min-width: 0; }
+        .drinks .txt b { display: block; font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .drinks .txt span { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 12px; color: var(--mute); }
+        .drinks .txt span .ic { width: 13px; height: 13px; }
+        .drinks .none { display: block; padding: 6px 0; font-size: 13px; color: var(--mute); }
+        .row-btn { flex: none; width: 34px; height: 34px; margin-left: -6px; border: 0; border-radius: 50%; background: none; color: var(--mute); display: grid; place-items: center; transition: background .15s, color .15s; }
+        .row-btn .ic { width: 17px; height: 17px; }
+        .row-btn:hover { background: var(--hover); color: var(--ink); }
+        .row-btn.del:hover { color: var(--danger); }
+
+        /* Erfassung */
+        .group { margin-bottom: 14px; }
+        .group > .eyebrow { display: block; margin: 0 2px 6px; }
+        .quick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .chip { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 12px; border: 0; border-radius: var(--radius-s); background: var(--well);
+            color: var(--ink); font-size: 13px; font-weight: 600; text-align: left; transition: background .15s, box-shadow .15s; }
+        .chip:hover { background: var(--hover); }
+        .chip .ic { width: 22px; height: 22px; color: var(--p1); }
+        .chip[aria-pressed="true"] { background: var(--p1-soft); box-shadow: inset 0 0 0 1.5px var(--p1); }
+        .inp { width: 100%; min-height: 40px; padding: 9px 12px; border: 0; border-radius: 10px; background: var(--well); color: var(--ink); font-size: 16px; }
+        .inp:focus { outline: 2px solid var(--p1); outline-offset: 0; }
+        select.inp { -webkit-appearance: none; appearance: none; padding-right: 34px; cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center; background-size: 14px; }
+        @media (min-width: 640px) { .inp { font-size: 14px; } }
+        .lbl { display: grid; gap: 4px; font-size: 12px; font-weight: 500; color: var(--mute); }
+        .toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; padding: 10px 12px; border-radius: var(--radius-s); background: var(--well); cursor: pointer; }
+        .toggle .t { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; color: var(--ink); }
+        .toggle .t .ic { width: 18px; height: 18px; color: var(--mute); }
+        .switch { position: relative; flex: none; width: 51px; height: 31px; }
+        .switch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+        .switch span { position: absolute; inset: 0; border-radius: 999px; background: color-mix(in srgb, var(--mute) 32%, transparent); transition: background .2s; pointer-events: none; }
+        .switch span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .2); transition: transform .2s; }
+        .switch input:checked + span { background: var(--ok); }
+        .switch input:checked + span::after { transform: translateX(20px); }
+        .switch input:focus-visible + span { outline: 2px solid var(--p1); outline-offset: 2px; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 16px; font-size: 14px; font-weight: 600; border: 0; border-radius: 12px;
+            background: var(--p1); color: var(--on-p1); transition: filter .15s; }
+        .btn:hover { filter: brightness(1.06); }
+        .btn:disabled { opacity: .5; }
+        .btn.ghost { background: var(--well); color: var(--ink); }
+        .btn-add { display: flex; width: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 52px; margin-bottom: 14px; padding: 8px 16px;
+            border: 0; border-radius: 14px; background: var(--p1); color: var(--on-p1); font-size: 15px; font-weight: 600; transition: filter .15s, transform .1s; }
+        .btn-add:hover { filter: brightness(1.06); }
+        .btn-add:active { transform: scale(.98); }
+        .btn-add:disabled { background: var(--well); color: var(--mute); filter: none; transform: none; }
+        .btn-add #confirmMain { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+        .btn-add #confirmMain .ic { width: 18px; height: 18px; stroke-width: 2.2; }
+        .btn-add #confirmSub { font-size: 12px; font-weight: 500; opacity: .85; }
+        details.manual { border-radius: var(--radius-s); background: var(--well); }
+        details.manual summary { display: flex; align-items: center; gap: 10px; padding: 11px 12px; list-style: none; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--ink); }
+        details.manual summary::-webkit-details-marker { display: none; }
+        details.manual summary .ic { width: 18px; height: 18px; color: var(--mute); }
+        details.manual summary .chev { margin-left: auto; width: 14px; height: 14px; transition: transform .2s; }
+        details.manual[open] summary .chev { transform: rotate(90deg); }
+        details.manual form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 4px 12px 12px; }
+        details.manual .inp { background: var(--card); }
+        details.manual .full { grid-column: 1 / -1; }
+        .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink); }
+        .check input { width: 18px; height: 18px; margin: 0; accent-color: var(--p1); }
+        .msg { margin-top: 12px; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 500; background: var(--danger-soft); color: var(--danger); }
+        .msg.ok { background: var(--ok-soft); color: var(--ok); }
+        .foot { margin-top: 14px; font-size: 12px; line-height: 1.5; color: var(--mute); }
+        .ro { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; }
+        .ro .ic { width: 18px; height: 18px; color: var(--p1); margin-top: 1px; }
+        .ro b { color: var(--ink); }
+
         /* Zeitpunkt-Auswahl (gleich auf Android und iOS): Tag per Kalender, Uhrzeit per Kacheln */
-        .wp-row { @apply flex items-stretch gap-2; }
-        .wp-step { @apply w-14 shrink-0 rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm font-extrabold text-slate-700 dark:text-zinc-200 hover:border-brand-500 active:scale-95 transition disabled:opacity-40; }
-        .wp-main { @apply relative flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-950 px-3 py-2.5 text-base font-extrabold text-slate-900 dark:text-zinc-100 hover:border-brand-500; }
-        .wp-main[aria-expanded="true"] { @apply border-brand-500 ring-2 ring-brand-500; }
+        .wp { display: grid; gap: 8px; }
+        .wp-row { display: flex; align-items: stretch; gap: 8px; }
+        .wp-step { width: 48px; flex: none; min-height: 40px; border: 0; border-radius: 10px; background: var(--well); color: var(--ink); font-size: 13px; font-weight: 600;
+            font-variant-numeric: tabular-nums; display: grid; place-items: center; transition: background .15s; }
+        .wp-step:hover { background: var(--hover); }
+        .wp-step:disabled { opacity: .35; }
+        .wp-step .ic { width: 16px; height: 16px; }
+        .wp-main { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 8px 12px; border: 0; border-radius: 10px;
+            background: var(--well); color: var(--ink); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; transition: background .15s; }
+        .wp-main:hover { background: var(--hover); }
+        .wp-main .ic { width: 16px; height: 16px; color: var(--p1); }
+        .wp-main[aria-expanded="true"] { box-shadow: inset 0 0 0 1.5px var(--p1); }
         .wp-date { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-        .wp-panel { @apply mt-2 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-950 p-3; }
-        .wp-grid { @apply grid grid-cols-6 gap-1.5; }
-        .wp-cell { @apply rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 py-2 text-sm font-bold tabular-nums text-slate-800 dark:text-zinc-100 hover:border-brand-500 active:scale-95 transition; }
-        .wp-cell[aria-pressed="true"] { @apply border-brand-500 bg-brand-100 text-brand-700 ring-2 ring-brand-500 dark:bg-zinc-800 dark:text-brand-300; }
-        .wp-chip { @apply rounded-full border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1 text-xs font-bold text-slate-600 dark:text-zinc-300 hover:border-brand-500 active:scale-95 transition; }
+        .wp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+        .wp-chip { min-height: 28px; padding: 4px 12px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--mute) 14%, transparent); color: var(--ink); font-size: 12px; font-weight: 500; transition: background .15s; }
+        .wp-chip:hover { background: color-mix(in srgb, var(--mute) 24%, transparent); }
+        .wp-panel { padding: 12px; border-radius: var(--radius-s); background: var(--well); }
+        .wp-panel .eyebrow { display: block; margin-bottom: 6px; }
+        .wp-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+        .wp-grid + .eyebrow { margin-top: 12px; }
+        .wp-cell { min-height: 34px; border: 0; border-radius: 8px; background: var(--card); color: var(--ink); font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; transition: background .15s; }
+        .wp-cell:hover { background: var(--hover); }
+        .wp-cell[aria-pressed="true"] { background: var(--p1); color: var(--on-p1); font-weight: 600; }
+
+        /* Historie */
+        .hist { display: grid; gap: 12px; }
+        @media (min-width: 640px) { .hist { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .hcard { display: block; width: 100%; border: 0; text-align: left; color: var(--text); transition: background .15s; }
+        .hcard:hover { background: color-mix(in srgb, var(--card) 70%, var(--hover)); }
+        .hcard .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+        .hcard .top b { display: block; font-size: 15px; font-weight: 600; color: var(--ink); }
+        .hcard .top .hint { font-size: 13px; font-variant-numeric: tabular-nums; }
+        .peak { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
+            color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
+        .peak .ic { width: 14px; height: 14px; }
+        .hcard .icons { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; color: var(--mute); }
+        .hcard .icons .ic { width: 18px; height: 18px; }
+        .hcard .meta { margin-top: 6px; font-size: 12px; color: var(--mute); }
+
+        /* Anmeldung, kein Zugang */
+        .gate { max-width: 380px; margin: 8vh auto 0; }
+        .gate h2 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 4px; }
+        .gate .lead { margin-bottom: 16px; font-size: 13px; color: var(--mute); }
+        .gate form { display: grid; gap: 12px; }
+        .gate .btn { min-height: 44px; font-size: 15px; }
+        .link { justify-self: start; padding: 2px 0; border: 0; background: none; font-size: 13px; font-weight: 600; color: var(--p1); }
+        .link:hover { text-decoration: underline; text-underline-offset: 3px; }
+        .lock { text-align: center; }
+        .lock .badge-ic { width: 48px; height: 48px; border-radius: 14px; margin: 0 auto 12px; }
+        .lock .badge-ic .ic { width: 24px; height: 24px; }
+
+        /* Dialoge als Blatt */
+        dialog { width: min(640px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; border: 0; border-radius: 20px; background: var(--card); color: var(--text); box-shadow: var(--pop); }
+        dialog.small { width: min(400px, calc(100vw - 32px)); }
+        dialog::backdrop { background: rgba(0, 0, 0, .4); }
+        .dlg { padding: 18px; }
+        .dlg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+        .dlg-head > div { min-width: 0; }
+        .dlg-head h2 { font-size: 18px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); }
+        .dlg-head .hint { font-size: 13px; }
+        .dlg-head .icon-btn { width: 30px; height: 30px; background: var(--well); box-shadow: none; color: var(--mute); }
+        .dlg-head .icon-btn .ic { width: 15px; height: 15px; stroke-width: 2.2; }
+        .dlg .chart { height: 190px; margin-bottom: 12px; }
+        #timeForm { display: grid; gap: 14px; }
+        #timeForm .dlg-head, #timeForm .group { margin-bottom: 0; }
+        .dlg .btns { display: flex; gap: 8px; }
+        .dlg .btns .btn { flex: 1; }
+
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+        @media (prefers-reduced-transparency: reduce) { header { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; } }
     </style>
 <script src="shared/ios-nav.js" defer></script>
 </head>
-<body class="min-h-screen bg-slate-100 text-slate-700 dark:bg-black dark:text-zinc-300 font-sans antialiased">
-<div class="mx-auto max-w-5xl px-4 pb-16">
+<body>
+<!-- Linien-Symbole (gleiche Strichstärke wie im Dashboard, in „Zuhause“ und DailyMind) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-beer" viewBox="0 0 24 24"><path d="M5 8.5h10V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M15 10.5h1.5a2.5 2.5 0 0 1 2.5 2.5v2a2.5 2.5 0 0 1-2.5 2.5H15"/><path d="M5 8.5A2.5 2.5 0 0 1 7.2 5a3 3 0 0 1 5.6 0A2.5 2.5 0 0 1 15 8.5"/><path d="M8.5 12v5.5M11.5 12v5.5"/></symbol>
+    <symbol id="i-wine" viewBox="0 0 24 24"><path d="M7.5 3h9s.5 2.6.5 4.5a5 5 0 0 1-10 0C7 5.6 7.5 3 7.5 3z"/><path d="M7.3 7.5h9.4M12 12.5V21M8.5 21h7"/></symbol>
+    <symbol id="i-sparkling" viewBox="0 0 24 24"><path d="M9.5 3h5l.5 7a3 3 0 0 1-6 0z"/><path d="M12 13v8M9 21h6M11.5 6.5v.01M13 8.5v.01"/></symbol>
+    <symbol id="i-cocktail" viewBox="0 0 24 24"><path d="M4 4h16l-8 9z"/><path d="M12 13v8M8 21h8M7 7.5h10M16 4l2.5-2"/></symbol>
+    <symbol id="i-shot" viewBox="0 0 24 24"><path d="M6 5h12l-1.4 13.2A2 2 0 0 1 14.6 20H9.4a2 2 0 0 1-2-1.8z"/><path d="M6.8 11h10.4"/></symbol>
+    <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5v2.5M12 3.5v2.5"/></symbol>
+    <symbol id="i-glass" viewBox="0 0 24 24"><path d="M6 7h12l-1.5 12.2A2 2 0 0 1 14.5 21h-5a2 2 0 0 1-2-1.8z"/><path d="M13 7l2-4h3M6.7 12.5h10.6"/></symbol>
+    <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M10 2.5h4M12 2.5V6"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M4 16l5-6 4 3 7-8"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
+    <symbol id="i-food" viewBox="0 0 24 24"><path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2 1.5-3 4-3 7v4h3"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 12a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-offline" viewBox="0 0 24 24"><path d="M3 3l18 18M8.5 16.5a5 5 0 0 1 7 0M5 13a10 10 0 0 1 4.5-2.6M12 9.5a10 10 0 0 1 7 3.5M2 9.5a15 15 0 0 1 4.3-2.9M10.5 5.6A15 15 0 0 1 22 9.5M12 20h.01"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.5h.01"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"/></symbol>
+</svg>
 
-    <header class="sticky top-0 z-30 -mx-4 mb-5 flex items-center justify-between gap-3 border-b-4 border-brand-500 bg-slate-100/95 px-4 py-3 backdrop-blur dark:bg-black/95">
-        <div class="min-w-0">
-            <h1 class="truncate text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">🍻 PegelTracker</h1>
-            <div id="subline" class="truncate text-sm font-semibold text-slate-500 dark:text-zinc-400">Promille &amp; Koffein im Blick</div>
+<header>
+    <div class="wrap bar">
+        <img class="logo" src="icon.svg" alt="">
+        <div class="head">
+            <h1>PegelTracker</h1>
+            <div id="subline" class="sub">Promille &amp; Koffein im Blick</div>
         </div>
-        <div class="flex shrink-0 items-center gap-2">
+        <div class="acts">
             <select id="personSel" class="hdr-sel" aria-label="Bereich wählen" title="Bereich wählen" hidden></select>
-            <button id="themeToggle" class="icon-btn" type="button" aria-label="Zum dunklen Modus wechseln">🌙</button>
-            <div class="relative">
-                <button id="meBtn" class="icon-btn me-btn" type="button" aria-label="Mein Konto" title="Mein Konto" aria-haspopup="menu" aria-expanded="false" aria-controls="meMenu" hidden>👤</button>
+            <button id="themeToggle" class="icon-btn" type="button" aria-label="Zum dunklen Modus wechseln"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></button>
+            <div class="me">
+                <button id="meBtn" class="icon-btn" type="button" aria-label="Mein Konto" title="Mein Konto" aria-haspopup="menu" aria-expanded="false" aria-controls="meMenu" hidden><svg class="ic" aria-hidden="true"><use href="#i-person"/></svg></button>
                 <div id="meMenu" class="me-menu" role="menu" hidden>
                     <div class="me-head"><span id="menuAva" class="ava"></span><div><b id="menuName"></b></div></div>
-                    <a class="me-item" href="/konto.html?from=pegeltracker#app-pegeltracker" role="menuitem">⚙️ Kontoeinstellungen</a>
-                    <a id="adminLink" class="me-item" href="/admin.html?from=pegeltracker#app-pegeltracker" role="menuitem" hidden>🛡️ Admin-Einstellungen</a>
-                    <button id="logoutBtn" class="me-item danger" type="button" role="menuitem">🚪 Abmelden</button>
+                    <a class="me-item" href="/konto.html?from=pegeltracker#app-pegeltracker" role="menuitem"><svg class="ic" aria-hidden="true"><use href="#i-gear"/></svg>Kontoeinstellungen</a>
+                    <a id="adminLink" class="me-item" href="/admin.html?from=pegeltracker#app-pegeltracker" role="menuitem" hidden><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>Admin-Einstellungen<small>nur Admins</small></a>
+                    <div class="me-sep"></div>
+                    <button id="logoutBtn" class="me-item danger" type="button" role="menuitem"><svg class="ic" aria-hidden="true"><use href="#i-logout"/></svg>Abmelden</button>
                 </div>
             </div>
         </div>
-    </header>
+    </div>
+</header>
 
-    <div id="banner" class="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300" hidden></div>
+<div class="wrap">
+
+    <div id="banner" class="banner" hidden></div>
 
     <!-- ───────── Anmeldung ───────── -->
-    <section id="loginView" class="mx-auto max-w-md" hidden>
+    <section id="loginView" class="gate" hidden>
         <div class="card">
-            <h2 class="mb-1 text-lg font-extrabold text-slate-900 dark:text-white">Anmelden</h2>
-            <p class="mb-4 text-sm text-slate-500">Gleiches Konto wie bei TravelBase und Questlog.</p>
-            <form id="loginForm" class="flex flex-col gap-3">
+            <h2>Anmelden</h2>
+            <p class="lead">Gleiches Konto wie bei TravelBase und Questlog.</p>
+            <form id="loginForm">
                 <label class="lbl">E-Mail<input id="loginMail" class="inp" type="email" autocomplete="email" required></label>
                 <label class="lbl">Passwort<input id="loginPw" class="inp" type="password" autocomplete="current-password" required></label>
                 <button class="btn" type="submit">Anmelden</button>
-                <button id="forgotBtn" class="self-start text-sm font-bold text-brand-600 hover:underline" type="button">Passwort vergessen?</button>
-                <div id="loginMsg" class="text-sm font-semibold" hidden></div>
+                <button id="forgotBtn" class="link" type="button">Passwort vergessen?</button>
+                <div id="loginMsg" class="msg" hidden></div>
             </form>
         </div>
     </section>
 
-    <section id="noAccessView" class="mx-auto max-w-md" hidden>
-        <div class="card text-center">
-            <div class="text-4xl">🔒</div>
-            <h2 class="mt-2 text-lg font-extrabold text-slate-900 dark:text-white">Kein Zugang</h2>
-            <p class="mt-1 text-sm text-slate-500">Dein Konto ist für den PegelTracker noch nicht freigeschaltet.</p>
+    <section id="noAccessView" class="gate" hidden>
+        <div class="card lock">
+            <div class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></div>
+            <h2>Kein Zugang</h2>
+            <p class="lead">Dein Konto ist für den PegelTracker noch nicht freigeschaltet.</p>
         </div>
     </section>
 
     <!-- ───────── App ───────── -->
     <main id="appView" hidden>
-        <div class="mb-5 flex gap-1 rounded-xl bg-slate-200 p-1 dark:bg-zinc-900" role="tablist">
-            <button class="tab" role="tab" data-tab="dash" aria-selected="true">📊 Dashboard</button>
-            <button class="tab" role="tab" data-tab="hist" aria-selected="false">📜 Historie</button>
+        <div class="seg tabs" role="tablist">
+            <button role="tab" data-tab="dash" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg>Dashboard</button>
+            <button role="tab" data-tab="hist" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>Historie</button>
         </div>
 
         <!-- Dashboard -->
-        <section id="dashView" class="grid gap-5 lg:grid-cols-5">
-            <div class="flex flex-col gap-5 lg:col-span-3">
+        <section id="dashView" class="cols">
+            <div class="col">
                 <!-- aktueller Stand -->
                 <div class="card">
-                    <div class="flex flex-wrap items-end justify-between gap-4">
+                    <div class="now-top">
                         <div>
-                            <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Aktueller Pegel</div>
-                            <div class="flex items-baseline gap-2">
-                                <span id="bacNow" class="text-6xl font-extrabold tabular-nums text-slate-900 dark:text-white">0,00</span>
-                                <span class="text-2xl font-bold text-slate-400">‰</span>
-                                <span id="bacTrend" class="text-xl font-bold"></span>
+                            <div class="eyebrow">Aktueller Pegel</div>
+                            <div class="bac">
+                                <span id="bacNow">0,00</span>
+                                <span class="unit">‰</span>
+                                <span id="bacTrend"></span>
                             </div>
-                            <div id="bacHint" class="mt-1 text-sm font-semibold text-slate-500">Keine laufende Session.</div>
+                            <div id="bacHint">Keine laufende Session.</div>
                         </div>
-                        <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
-                            <span class="text-slate-500">Höchstwert</span><b id="statPeak" class="tabular-nums text-slate-900 dark:text-white">–</b>
-                            <span class="text-slate-500">Session seit</span><b id="statStart" class="tabular-nums text-slate-900 dark:text-white">–</b>
-                            <span class="text-slate-500">Getränke</span><b id="statCount" class="tabular-nums text-slate-900 dark:text-white">–</b>
-                            <span class="text-slate-500">Reiner Alkohol</span><b id="statGrams" class="tabular-nums text-slate-900 dark:text-white">–</b>
-                        </div>
+                        <dl class="stats">
+                            <dt>Höchstwert</dt><dd id="statPeak">–</dd>
+                            <dt>Session seit</dt><dd id="statStart">–</dd>
+                            <dt>Getränke</dt><dd id="statCount">–</dd>
+                            <dt>Reiner Alkohol</dt><dd id="statGrams">–</dd>
+                        </dl>
                     </div>
-                    <div class="mt-4 flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-3 dark:bg-zinc-950">
-                        <span class="text-2xl">☕</span>
-                        <div class="min-w-0 flex-1">
-                            <div class="text-sm font-bold text-slate-900 dark:text-white"><span id="cafNow">0</span> mg Koffein aktiv <span id="cafLevel" class="ml-1 rounded-full px-2 py-0.5 text-xs"></span></div>
-                            <div id="cafHint" class="text-xs text-slate-500">Heute insgesamt 0 mg (Richtwert max. 400 mg/Tag).</div>
+                    <div class="caf-row">
+                        <span class="badge-ic caf"><svg class="ic" aria-hidden="true"><use href="#i-coffee"/></svg></span>
+                        <div class="main">
+                            <b><span id="cafNow" class="num">0</span> mg Koffein aktiv</b><span id="cafLevel" class="pill"></span>
+                            <div id="cafHint" class="hint">Heute insgesamt 0 mg (Richtwert max. 400 mg/Tag).</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Meilensteine -->
                 <div class="card">
-                    <h2 class="mb-3 font-extrabold text-slate-900 dark:text-white">⏱️ Meilensteine</h2>
-                    <div id="milestones" class="grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+                    <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-timer"/></svg></span><h3>Meilensteine</h3></div>
+                    <div id="milestones" class="ms-grid"></div>
                 </div>
 
                 <!-- Chart -->
                 <div class="card">
-                    <div class="mb-2 flex items-center justify-between">
-                        <h2 class="font-extrabold text-slate-900 dark:text-white">📈 Verlauf</h2>
-                        <span class="text-xs text-slate-500">Promille (Linie) · Koffein (Fläche)</span>
+                    <div class="card-head">
+                        <span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg></span><h3>Verlauf</h3>
+                        <div class="legend"><span><i></i>Promille</span><span><i class="caf"></i>Koffein</span></div>
                     </div>
-                    <div class="relative h-72"><canvas id="liveChart"></canvas></div>
-                    <p id="chartEmpty" class="py-10 text-center text-sm text-slate-500" hidden>Sobald du etwas trinkst, erscheint hier der Verlauf.</p>
+                    <div class="chart"><canvas id="liveChart"></canvas></div>
+                    <p id="chartEmpty" class="empty" hidden>Sobald du etwas trinkst, erscheint hier der Verlauf.</p>
                 </div>
 
                 <!-- Getränke der Session -->
                 <div class="card">
-                    <h2 class="mb-3 font-extrabold text-slate-900 dark:text-white">🧾 Diese Session</h2>
-                    <ul id="sessionList" class="divide-y divide-slate-100 dark:divide-zinc-800"></ul>
+                    <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg></span><h3>Diese Session</h3></div>
+                    <ul id="sessionList" class="drinks"></ul>
                 </div>
             </div>
 
             <!-- Erfassung -->
-            <div class="lg:col-span-2">
-                <div id="entryCard" class="card lg:sticky lg:top-24">
-                    <h2 class="mb-3 font-extrabold text-slate-900 dark:text-white">➕ Neuer Eintrag</h2>
+            <div class="col side">
+                <div id="entryCard" class="card">
+                    <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></span><h3>Neuer Eintrag</h3></div>
 
-                    <div class="lbl mb-4">Zeitpunkt
+                    <div class="group"><span class="eyebrow">Zeitpunkt</span>
                         <input id="entryTime" type="hidden" data-when>
                     </div>
 
-                    <div class="mb-1 text-xs font-bold text-slate-500">Schnellwahl</div>
-                    <div id="quickBtns" class="mb-4 grid grid-cols-2 gap-2"></div>
-
-                    <div class="mb-1 text-xs font-bold text-slate-500">Standard-Getränke &amp; Koffein</div>
-                    <div class="mb-4">
-                        <select id="stdSel" class="inp"></select>
+                    <div class="group"><span class="eyebrow">Schnellwahl</span>
+                        <div id="quickBtns" class="quick"></div>
                     </div>
 
-                    <label class="mb-4 flex cursor-pointer items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-zinc-950">
-                        <span class="text-sm font-bold text-slate-800 dark:text-zinc-100">🍽️ Gute Essensgrundlage</span>
-                        <span class="relative inline-flex items-center">
-                            <input id="foodToggle" type="checkbox" class="peer sr-only">
-                            <span class="h-7 w-12 rounded-full bg-slate-300 transition peer-checked:bg-emerald-500 dark:bg-zinc-700"></span>
-                            <span class="absolute left-1 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5"></span>
-                        </span>
+                    <div class="group"><span class="eyebrow">Standard-Getränke &amp; Koffein</span>
+                        <select id="stdSel" class="inp" aria-label="Standard-Getränk wählen"></select>
+                    </div>
+
+                    <label class="toggle">
+                        <span class="t"><svg class="ic" aria-hidden="true"><use href="#i-food"/></svg>Gute Essensgrundlage</span>
+                        <span class="switch"><input id="foodToggle" type="checkbox"><span></span></span>
                     </label>
 
-                    <button id="confirmAdd" class="btn-add mb-4" type="button" disabled>
+                    <button id="confirmAdd" class="btn-add" type="button" disabled>
                         <span id="confirmMain">Erst Getränk auswählen</span>
-                        <span id="confirmSub" class="text-xs font-bold opacity-80" hidden></span>
+                        <span id="confirmSub" hidden></span>
                     </button>
 
-                    <details class="rounded-xl border border-slate-200 p-3 dark:border-zinc-800">
-                        <summary class="cursor-pointer text-sm font-bold text-slate-800 dark:text-zinc-100">✍️ Manuelle Eingabe</summary>
-                        <form id="manualForm" class="mt-3 grid grid-cols-2 gap-3">
-                            <label class="lbl col-span-2">Bezeichnung<input id="mName" class="inp" type="text" maxlength="80" placeholder="z. B. Hausmarke Gin Tonic" required></label>
+                    <details class="manual">
+                        <summary><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg>Manuelle Eingabe<svg class="ic chev" aria-hidden="true"><use href="#i-right"/></svg></summary>
+                        <form id="manualForm">
+                            <label class="lbl full">Bezeichnung<input id="mName" class="inp" type="text" maxlength="80" placeholder="z. B. Hausmarke Gin Tonic" required></label>
                             <label class="lbl">Menge (Liter)<input id="mVol" class="inp" type="number" min="0.01" max="5" step="0.01" placeholder="0,2" required></label>
                             <label class="lbl">Alkohol (Vol.-%)<input id="mAbv" class="inp" type="number" min="0" max="100" step="0.1" placeholder="12" required></label>
                             <label class="lbl">Koffein (mg)<input id="mCaf" class="inp" type="number" min="0" max="2000" step="1" value="0"></label>
@@ -240,55 +501,55 @@
                                     <option value="caffeine">Koffein</option><option value="other">Sonstiges</option>
                                 </select>
                             </label>
-                            <label class="col-span-2 flex items-center gap-2 text-sm font-semibold"><input id="mSave" type="checkbox" class="h-4 w-4 accent-amber-600"> Als eigenes Getränk im Dropdown merken</label>
-                            <button class="btn col-span-2" type="submit">Eintragen</button>
+                            <label class="check full"><input id="mSave" type="checkbox"> Als eigenes Getränk im Dropdown merken</label>
+                            <button class="btn full" type="submit">Eintragen</button>
                         </form>
                     </details>
-                    <div id="entryMsg" class="mt-3 rounded-lg px-3 py-2 text-sm font-semibold" hidden></div>
-                    <p class="mt-4 text-xs leading-relaxed text-slate-400">Schätzung nach Widmark/Watson. Nicht geeignet, um die Fahrtüchtigkeit zu beurteilen.</p>
+                    <div id="entryMsg" class="msg" hidden></div>
+                    <p class="foot">Schätzung nach Widmark/Watson. Nicht geeignet, um die Fahrtüchtigkeit zu beurteilen.</p>
                 </div>
-                <div id="readonlyCard" class="card text-sm" hidden>👀 Du siehst den Bereich von <b id="roName"></b>. Einträge kann nur die Person selbst machen.</div>
+                <div id="readonlyCard" class="card ro" hidden><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg><span>Du siehst den Bereich von <b id="roName"></b>. Einträge kann nur die Person selbst machen.</span></div>
             </div>
         </section>
 
         <!-- Historie -->
         <section id="histView" hidden>
-            <div id="histList" class="grid gap-3 sm:grid-cols-2"></div>
-            <p id="histEmpty" class="card text-center text-sm text-slate-500" hidden>Noch keine abgeschlossenen Sessions.</p>
+            <div id="histList" class="hist"></div>
+            <p id="histEmpty" class="card empty" hidden>Noch keine abgeschlossenen Sessions.</p>
         </section>
     </main>
 </div>
 
 <!-- Detailansicht einer Session -->
-<dialog id="detailDlg" class="w-[min(640px,calc(100vw-2rem))] rounded-2xl bg-white p-0 text-slate-700 backdrop:bg-black/50 dark:bg-zinc-900 dark:text-zinc-300">
-    <div class="p-5">
-        <div class="mb-3 flex items-start justify-between gap-3">
+<dialog id="detailDlg">
+    <div class="dlg">
+        <div class="dlg-head">
             <div>
-                <h2 id="dTitle" class="text-lg font-extrabold text-slate-900 dark:text-white"></h2>
-                <div id="dSub" class="text-sm text-slate-500"></div>
+                <h2 id="dTitle"></h2>
+                <div id="dSub" class="hint"></div>
             </div>
-            <button class="icon-btn !text-base" type="button" onclick="this.closest('dialog').close()" aria-label="Schließen">✕</button>
+            <button class="icon-btn" type="button" onclick="this.closest('dialog').close()" aria-label="Schließen"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
         </div>
-        <div class="relative mb-4 h-48"><canvas id="detailChart"></canvas></div>
-        <ul id="dList" class="divide-y divide-slate-100 dark:divide-zinc-800"></ul>
+        <div class="chart"><canvas id="detailChart"></canvas></div>
+        <ul id="dList" class="drinks"></ul>
     </div>
 </dialog>
 
 <!-- Zeitpunkt eines Getränks ändern -->
-<dialog id="timeDlg" class="w-[min(400px,calc(100vw-2rem))] rounded-2xl bg-white p-0 text-slate-700 backdrop:bg-black/50 dark:bg-zinc-900 dark:text-zinc-300">
-    <form id="timeForm" class="flex flex-col gap-4 p-5">
-        <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-                <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">🕒 Zeitpunkt ändern</h2>
-                <div id="tName" class="truncate text-sm text-slate-500"></div>
+<dialog id="timeDlg" class="small">
+    <form id="timeForm" class="dlg">
+        <div class="dlg-head">
+            <div>
+                <h2>Zeitpunkt ändern</h2>
+                <div id="tName" class="hint"></div>
             </div>
-            <button class="icon-btn !text-base" type="button" data-close-time aria-label="Schließen">✕</button>
+            <button class="icon-btn" type="button" data-close-time aria-label="Schließen"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
         </div>
-        <div class="lbl">Neuer Zeitpunkt<input id="tTime" type="hidden" data-when></div>
-        <div id="tMsg" class="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 dark:bg-red-950/40 dark:text-red-300" hidden></div>
-        <div class="flex gap-2">
-            <button class="btn-ghost flex-1 !py-2.5" type="button" data-close-time>Abbrechen</button>
-            <button id="tSave" class="btn flex-1" type="submit">Speichern</button>
+        <div class="group"><span class="eyebrow">Neuer Zeitpunkt</span><input id="tTime" type="hidden" data-when></div>
+        <div id="tMsg" class="msg" hidden></div>
+        <div class="btns">
+            <button class="btn ghost" type="button" data-close-time>Abbrechen</button>
+            <button id="tSave" class="btn" type="submit">Speichern</button>
         </div>
     </form>
 </dialog>
@@ -326,10 +587,10 @@ const MODEL = {
 const MILESTONES = [0.8, 0.5, 0.3, 0.0];
 
 const QUICK = [
-    { emoji: '🍺', name: 'Bier 0,33 l', category: 'beer', volume_ml: 330, abv: 5.0 },
-    { emoji: '🍺', name: 'Bier 0,5 l', category: 'beer', volume_ml: 500, abv: 5.0 },
-    { emoji: '🍷', name: 'Glas Wein', category: 'wine', volume_ml: 200, abv: 12.0 },
-    { emoji: '🥂', name: 'Glas Prosecco', category: 'sparkling', volume_ml: 100, abv: 11.0 }
+    { name: 'Bier 0,33 l', category: 'beer', volume_ml: 330, abv: 5.0 },
+    { name: 'Bier 0,5 l', category: 'beer', volume_ml: 500, abv: 5.0 },
+    { name: 'Glas Wein', category: 'wine', volume_ml: 200, abv: 12.0 },
+    { name: 'Glas Prosecco', category: 'sparkling', volume_ml: 100, abv: 11.0 }
 ];
 const STANDARD = [
 
@@ -365,7 +626,10 @@ const STANDARD = [
         { name: 'Mate 0,5 l', category: 'caffeine', volume_ml: 500, abv: 0, caffeine_mg: 100 }
     ] }
 ];
-const CAT_EMOJI = { beer: '🍺', wine: '🍷', sparkling: '🥂', cocktail: '🍹', shot: '🥃', spirit: '🥃', caffeine: '☕', other: '🥤' };
+/* Linien-Symbole aus dem SVG-Sprite oben im <body> */
+const ic = id => `<svg class="ic" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+const CAT_ICON = { beer: 'beer', wine: 'wine', sparkling: 'sparkling', cocktail: 'cocktail', shot: 'shot', spirit: 'shot', caffeine: 'coffee', other: 'glass' };
+const catIc = c => ic(CAT_ICON[c] || 'glass');
 
 const H = 3600e3, MIN = 60e3;
 const grams = d => d.volume_ml * (d.abv / 100) * MODEL.ethanolDensity;
@@ -498,7 +762,8 @@ const fmtDur = ms => { const m = Math.max(0, Math.round(ms / MIN)); return m >= 
 const localInput = t => { const d = new Date(t - new Date(t).getTimezoneOffset() * MIN); return d.toISOString().slice(0, 16); };
 const isDark = () => document.documentElement.classList.contains('dark');
 
-function bacColor(b) { return b >= 1.1 ? '#dc2626' : b >= 0.5 ? '#ea580c' : b >= 0.3 ? '#d97706' : b > 0 ? '#ca8a04' : '#059669'; }
+/* Farben der Pegelstufen kommen aus den CSS-Variablen (--lv0 … --lv4), damit sie hell und dunkel passen */
+function bacColor(b) { return `var(--lv${b >= 1.1 ? 4 : b >= 0.5 ? 3 : b >= 0.3 ? 2 : b > 0 ? 1 : 0})`; }
 function bacText(b) {
     if (b <= 0) return 'Nüchtern.';
     if (b < 0.3) return 'Leicht angeheitert. Bitte trotzdem nicht fahren.';
@@ -507,10 +772,10 @@ function bacText(b) {
     return 'Ab 1,1 ‰: absolute Fahruntüchtigkeit.';
 }
 function cafLevel(mg) {
-    if (mg < 40) return ['gering', 'bg-slate-200 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300'];
-    if (mg < 150) return ['moderat', 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'];
-    if (mg < 300) return ['hoch', 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'];
-    return ['sehr hoch', 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'];
+    if (mg < 40) return ['gering', 'low'];
+    if (mg < 150) return ['moderat', 'mid'];
+    if (mg < 300) return ['hoch', 'high'];
+    return ['sehr hoch', 'max'];
 }
 
 /* ═════════ Zustand ═════════ */
@@ -526,6 +791,7 @@ const S = { user: null, role: null, people: [], viewId: null, drinks: [], custom
 const viewPerson = () => S.people.find(p => p.id === S.viewId) || null;
 const viewingSelf = () => S.user && S.viewId === S.user.id;
 let liveChart = null, detailChart = null;
+Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif';
 
 function errorText(e) {
     const m = String(e && (e.message || e));
@@ -538,7 +804,7 @@ function errorText(e) {
 function banner(html) { const b = $('#banner'); b.hidden = !html; b.innerHTML = html || ''; }
 function flash(text, ok = true) {
     const m = $('#entryMsg'); m.hidden = false; m.textContent = text;
-    m.className = 'mt-3 rounded-lg px-3 py-2 text-sm font-semibold ' + (ok ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300');
+    m.className = 'msg' + (ok ? ' ok' : '');
     clearTimeout(flash.t); flash.t = setTimeout(() => { m.hidden = true; }, 3500);
 }
 
@@ -563,7 +829,7 @@ async function loadDrinks() {
         const c = cacheGet(key);
         if (!c || !isNetErr(e)) throw e;
         S.drinks = c.drinks; S.custom = c.custom || [];
-        banner('📴 Offline: du siehst den zuletzt geladenen Stand.');
+        banner(ic('offline') + '<span>Offline: du siehst den zuletzt geladenen Stand.</span>');
     }
 }
 
@@ -578,7 +844,7 @@ async function addDrink(d) {
         const saved = check(await sb.from('pegel_drinks').insert(row).select().single());
         S.drinks.push(saved);
         cacheSet('drinks_' + S.viewId, { drinks: S.drinks, custom: S.custom });
-        flash(`${CAT_EMOJI[row.category]} ${row.name} eingetragen.`);
+        flash(`${row.name} eingetragen.`);
         $('#entryTime').value = localInput(Date.now()); entryTimeTouched = false;
         clearPick();
         recompute(); render();
@@ -592,7 +858,7 @@ function openTimeEdit(id) {
     const d = S.drinks.find(x => String(x.id) === String(id));
     if (!d || !viewingSelf()) return;
     editId = d.id;
-    $('#tName').textContent = `${CAT_EMOJI[d.category] || '🥤'} ${d.name} · bisher ${fmtDayShort(d.consumed_at)} ${fmtTime(d.consumed_at)}`;
+    $('#tName').textContent = `${d.name} · bisher ${fmtDayShort(d.consumed_at)} ${fmtTime(d.consumed_at)}`;
     $('#tTime').value = localInput(+new Date(d.consumed_at));
     $('#tMsg').hidden = true;
     $('#tTime').wpClose();
@@ -664,7 +930,7 @@ function render() {
     $('#readonlyCard').hidden = viewingSelf();
     $('#roName').textContent = me ? me.display_name : '';
     if (S.body && S.body.missing.length && viewingSelf())
-        banner(`👤 Für eine genaue Berechnung fehlen im Profil: <b>${S.body.missing.join(', ')}</b>. <a class="underline" href="/konto.html?from=pegeltracker#app-pegeltracker">Jetzt ergänzen</a>`);
+        banner(`${ic('person')}<span>Für eine genaue Berechnung fehlen im Profil: <b>${S.body.missing.join(', ')}</b>. <a href="/konto.html?from=pegeltracker#app-pegeltracker">Jetzt ergänzen</a></span>`);
 
     /* aktueller Pegel */
     const cur = s ? valueAt(s.curve, now) : { bac: 0 };
@@ -674,7 +940,7 @@ function render() {
     $('#bacTrend').textContent = !s ? '' : soon.bac > cur.bac + 0.005 ? '↗' : cur.bac > 0 ? '↘' : '';
     $('#bacTrend').style.color = bacColor(cur.bac);
     $('#bacHint').textContent = !s ? 'Keine laufende Session.'
-        : s.hasAlc ? bacText(cur.bac) : '☕ Koffein-Session – noch kein Alkohol.';
+        : s.hasAlc ? bacText(cur.bac) : 'Koffein-Session, noch kein Alkohol.';
     $('#statPeak').textContent = !s ? '–'
         : s.hasAlc ? `${nf(s.peak)} ‰ · ${fmtTime(s.peakAt)}`
         : `${nf(s.peakCaf, 0)} mg · ${fmtTime(s.peakCafAt)}`;
@@ -688,7 +954,7 @@ function render() {
     const today = recent.filter(d => sameDay(d.consumed_at, now)).reduce((m, d) => m + +d.caffeine_mg, 0);
     const [lvl, cls] = cafLevel(caf);
     $('#cafNow').textContent = nf(caf, 0);
-    $('#cafLevel').textContent = lvl; $('#cafLevel').className = 'ml-1 rounded-full px-2 py-0.5 text-xs ' + cls;
+    $('#cafLevel').textContent = lvl; $('#cafLevel').className = 'pill ' + cls;
     $('#cafHint').textContent = `Heute insgesamt ${nf(today, 0)} mg (Richtwert max. 400 mg/Tag).` +
         (s && caf >= 40 && cur.bac > 0 ? ' Koffein macht wacher, senkt aber nicht den Promillewert.' : '');
 
@@ -698,17 +964,17 @@ function render() {
         const reached = s && s.hasAlc && t != null && t <= now;
         const never = s && s.hasAlc && t == null;
         const label = level === 0 ? 'Nüchtern' : level === 0.5 ? 'Grenze Auto' : level === 0.3 ? 'Untere Grenze' : 'Alte Grenze';
-        const body = !s || !s.hasAlc ? '<span class="text-slate-400">–</span>'
-            : never ? '<span class="text-sm text-slate-400">nicht erreicht</span>'
-            : reached ? `<span class="font-extrabold text-emerald-700 dark:text-emerald-400">✓ ${fmtWhen(t, now)}</span>`
-            : `<span class="text-xl font-extrabold tabular-nums text-slate-900 dark:text-white">${fmtWhen(t, now)}</span><span class="block text-xs text-slate-500">in ${fmtDur(t - now)}</span>`;
-        return `<div class="ms ${reached ? 'done' : ''}"><div class="text-xs font-bold text-slate-500">${nf(level, 1)} ‰ · ${label}</div><div class="mt-1">${body}</div></div>`;
+        const body = !s || !s.hasAlc ? '–'
+            : never ? 'nicht erreicht'
+            : reached ? `<span class="ok">${ic('check')}${fmtWhen(t, now)}</span>`
+            : `<span class="t">${fmtWhen(t, now)}</span><span class="in">in ${fmtDur(t - now)}</span>`;
+        return `<div class="ms ${reached ? 'done' : ''}"><div class="k">${nf(level, 1)} ‰ · ${label}</div><div class="v">${body}</div></div>`;
     }).join('');
 
     /* Getränke der Session */
     const list = s ? s.drinks : [];
     $('#sessionList').innerHTML = list.length ? list.slice().reverse().map(drinkRow).join('')
-        : '<li class="py-3 text-sm text-slate-500">Noch nichts getrunken.</li>';
+        : '<li><span class="none">Noch nichts getrunken.</span></li>';
 
     renderLiveChart(s, now);
     renderHistory(now);
@@ -718,31 +984,32 @@ function drinkRow(d) {
     const meta = [d.volume_ml >= 1000 ? nf(d.volume_ml / 1000, 1) + ' l' : nf(d.volume_ml, 0) + ' ml'];
     if (d.abv > 0) meta.push(nf(d.abv, 1) + ' %', nf(grams(d), 0) + ' g');
     if (d.caffeine_mg > 0) meta.push(nf(d.caffeine_mg, 0) + ' mg Koffein');
-    if (d.with_food) meta.push('🍽️');
-    return `<li class="flex items-center gap-3 py-2.5">
-        <span class="w-14 shrink-0 text-sm font-bold tabular-nums text-slate-500">${fmtTime(d.consumed_at)}</span>
-        <span class="text-xl">${CAT_EMOJI[d.category] || '🥤'}</span>
-        <span class="min-w-0 flex-1"><b class="block truncate text-slate-900 dark:text-white">${esc(d.name)}</b><span class="text-xs text-slate-500">${meta.join(' · ')}</span></span>
-        ${viewingSelf() ? `<button class="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800" type="button" data-edit="${d.id}" aria-label="Zeitpunkt ändern" title="Zeitpunkt ändern">🕒</button>
-        <button class="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-zinc-800" type="button" data-del="${d.id}" aria-label="Löschen" title="Löschen">🗑️</button>` : ''}
+    if (d.with_food) meta.push(ic('food') + 'mit Essen');
+    return `<li>
+        <span class="time">${fmtTime(d.consumed_at)}</span>
+        <span class="badge-ic${d.abv > 0 ? '' : ' caf'}">${catIc(d.category)}</span>
+        <span class="txt"><b>${esc(d.name)}</b><span>${meta.join(' · ')}</span></span>
+        ${viewingSelf() ? `<button class="row-btn" type="button" data-edit="${d.id}" aria-label="Zeitpunkt ändern" title="Zeitpunkt ändern">${ic('clock')}</button>
+        <button class="row-btn del" type="button" data-del="${d.id}" aria-label="Löschen" title="Löschen">${ic('trash')}</button>` : ''}
     </li>`;
 }
 
 function chartConfig(curve, nowT, hasAlc = true) {
-    const grid = isDark() ? '#27272a' : '#e2e8f0', tick = isDark() ? '#a1a1aa' : '#64748b';
+    const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const grid = css('--line'), tick = css('--mute'), line = css('--p1'), caf = css('--caf'), ink = css('--ink');
     const nowLine = {
         id: 'now', afterDatasetsDraw(c) {
             if (nowT == null) return;
             const x = c.scales.x.getPixelForValue(nowT); if (x < c.chartArea.left || x > c.chartArea.right) return;
-            const g = c.ctx; g.save(); g.strokeStyle = '#f59e0b'; g.setLineDash([4, 4]); g.beginPath();
+            const g = c.ctx; g.save(); g.strokeStyle = ink; g.setLineDash([4, 4]); g.beginPath();
             g.moveTo(x, c.chartArea.top); g.lineTo(x, c.chartArea.bottom); g.stroke();
-            g.fillStyle = '#f59e0b'; g.font = 'bold 11px "Plus Jakarta Sans"'; g.fillText('jetzt', x + 4, c.chartArea.top + 10); g.restore();
+            g.fillStyle = ink; g.font = '600 11px ' + Chart.defaults.font.family; g.fillText('jetzt', x + 4, c.chartArea.top + 10); g.restore();
         }
     };
     const thresholds = {
         id: 'thresholds', beforeDatasetsDraw(c) {
             if (!hasAlc) return;
-            const g = c.ctx, y = c.scales.y; g.save(); g.setLineDash([2, 4]); g.font = '10px "Plus Jakarta Sans"';
+            const g = c.ctx, y = c.scales.y; g.save(); g.setLineDash([2, 4]); g.font = '11px ' + Chart.defaults.font.family;
             for (const l of [0.3, 0.5, 0.8, 1.1]) {
                 if (l > y.max) continue; const py = y.getPixelForValue(l);
                 g.strokeStyle = tick + '66'; g.beginPath(); g.moveTo(c.chartArea.left, py); g.lineTo(c.chartArea.right, py); g.stroke();
@@ -755,9 +1022,9 @@ function chartConfig(curve, nowT, hasAlc = true) {
     return {
         type: 'line',
         data: { datasets: [
-            { label: 'Promille', data: curve.map(p => ({ x: p.t, y: +p.bac.toFixed(3) })), borderColor: '#d97706', borderWidth: 3, pointRadius: 0, tension: 0.25, yAxisID: 'y', hidden: !hasAlc,
+            { label: 'Promille', data: curve.map(p => ({ x: p.t, y: +p.bac.toFixed(3) })), borderColor: line, borderWidth: 2.5, pointRadius: 0, tension: 0.25, yAxisID: 'y', hidden: !hasAlc,
               segment: { borderDash: ctx => nowT != null && ctx.p0.parsed.x >= nowT ? [6, 4] : undefined } },
-            { label: 'Koffein', data: curve.map(p => ({ x: p.t, y: Math.round(p.caf) })), borderColor: hasAlc ? '#78350f55' : '#92400e', backgroundColor: hasAlc ? '#92400e22' : '#92400e33', fill: true, borderWidth: 1, pointRadius: 0, tension: 0.3, yAxisID: 'y1' }
+            { label: 'Koffein', data: curve.map(p => ({ x: p.t, y: Math.round(p.caf) })), borderColor: hasAlc ? caf + '66' : caf, backgroundColor: caf + (hasAlc ? '22' : '33'), fill: true, borderWidth: 1, pointRadius: 0, tension: 0.3, yAxisID: 'y1' }
         ] },
         options: {
             responsive: true, maintainAspectRatio: false, animation: false, parsing: false,
@@ -789,15 +1056,15 @@ function renderHistory(now) {
     $('#histEmpty').hidden = done.length > 0;
     $('#histList').innerHTML = done.map(s => {
         const i = S.sessions.indexOf(s);
-        return `<button class="card text-left transition hover:border-brand-500" type="button" data-session="${i}">
-            <div class="flex items-start justify-between gap-2">
-                <div><b class="text-slate-900 dark:text-white">${fmtDay(s.start)}</b>
-                <div class="text-sm text-slate-500">${fmtTime(s.start)} bis ${fmtWhen(s.end, s.start)} · ${fmtDur(s.end - s.start)}</div></div>
-                ${s.hasAlc ? `<span class="rounded-full px-2.5 py-1 text-sm font-extrabold text-white" style="background:${bacColor(s.peak)}">${nf(s.peak)} ‰</span>`
-                    : `<span class="rounded-full px-2.5 py-1 text-sm font-extrabold text-white" style="background:#92400e">☕ ${nf(s.peakCaf, 0)} mg</span>`}
+        return `<button class="card hcard" type="button" data-session="${i}">
+            <div class="top">
+                <div><b>${fmtDay(s.start)}</b>
+                <div class="hint">${fmtTime(s.start)} bis ${fmtWhen(s.end, s.start)} · ${fmtDur(s.end - s.start)}</div></div>
+                ${s.hasAlc ? `<span class="peak" style="--c:${bacColor(s.peak)}">${nf(s.peak)} ‰</span>`
+                    : `<span class="peak" style="--c:var(--caf)">${ic('coffee')}${nf(s.peakCaf, 0)} mg</span>`}
             </div>
-            <div class="mt-2 text-sm">${s.drinks.map(d => CAT_EMOJI[d.category] || '🥤').join(' ')}</div>
-            <div class="mt-1 text-xs text-slate-500">${s.drinks.length} Getränke${s.hasAlc ? ` · ${nf(s.grams, 0)} g Alkohol` : ''}${s.caffeine ? ` · ${nf(s.caffeine, 0)} mg Koffein, max. ${nf(s.peakCaf, 0)} mg aktiv` : ''}</div>
+            <div class="icons">${s.drinks.map(d => catIc(d.category)).join('')}</div>
+            <div class="meta">${s.drinks.length} Getränke${s.hasAlc ? ` · ${nf(s.grams, 0)} g Alkohol` : ''}${s.caffeine ? ` · ${nf(s.caffeine, 0)} mg Koffein, max. ${nf(s.peakCaf, 0)} mg aktiv` : ''}</div>
         </button>`;
     }).join('');
 }
@@ -821,29 +1088,29 @@ function mountWhen(inp) {
     const pad = n => String(n).padStart(2, '0');
     const dayKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     const box = document.createElement('div');
-    box.className = 'flex flex-col gap-2 text-sm font-normal';
+    box.className = 'wp';
     box.innerHTML = `
         <div class="wp-row">
-            <button type="button" class="wp-step" data-wp="dprev" aria-label="Einen Tag zurück">◀</button>
-            <label class="wp-main"><span>📅</span><span data-wp-date></span>
+            <button type="button" class="wp-step" data-wp="dprev" aria-label="Einen Tag zurück">${ic('left')}</button>
+            <label class="wp-main">${ic('cal')}<span data-wp-date></span>
                 <input type="date" class="wp-date" aria-label="Datum wählen"></label>
-            <button type="button" class="wp-step" data-wp="dnext" aria-label="Einen Tag vor">▶</button>
+            <button type="button" class="wp-step" data-wp="dnext" aria-label="Einen Tag vor">${ic('right')}</button>
         </div>
         <div class="wp-row">
             <button type="button" class="wp-step" data-wp="m-5" aria-label="5 Minuten früher">−5</button>
-            <button type="button" class="wp-main" data-wp="toggle" aria-expanded="false"><span>🕒</span><span data-wp-time class="tabular-nums"></span></button>
+            <button type="button" class="wp-main" data-wp="toggle" aria-expanded="false">${ic('clock')}<span data-wp-time></span></button>
             <button type="button" class="wp-step" data-wp="m5" aria-label="5 Minuten später">+5</button>
         </div>
-        <div class="flex flex-wrap gap-1.5">
+        <div class="wp-chips">
             <button type="button" class="wp-chip" data-wp="now">Jetzt</button>
             <button type="button" class="wp-chip" data-wp="ago15">vor 15 min</button>
             <button type="button" class="wp-chip" data-wp="ago30">vor 30 min</button>
             <button type="button" class="wp-chip" data-wp="ago60">vor 1 h</button>
         </div>
         <div class="wp-panel" hidden>
-            <div class="mb-1.5 text-xs font-bold text-slate-500">Stunde</div>
-            <div class="wp-grid mb-3" data-wp-hours>${Array.from({ length: 24 }, (_, h) => `<button type="button" class="wp-cell" data-h="${h}">${pad(h)}</button>`).join('')}</div>
-            <div class="mb-1.5 text-xs font-bold text-slate-500">Minute</div>
+            <span class="eyebrow">Stunde</span>
+            <div class="wp-grid" data-wp-hours>${Array.from({ length: 24 }, (_, h) => `<button type="button" class="wp-cell" data-h="${h}">${pad(h)}</button>`).join('')}</div>
+            <span class="eyebrow">Minute</span>
             <div class="wp-grid" data-wp-mins>${Array.from({ length: 12 }, (_, i) => `<button type="button" class="wp-cell" data-m="${i * 5}">:${pad(i * 5)}</button>`).join('')}</div>
         </div>`;
     inp.after(box);
@@ -913,12 +1180,12 @@ function paintPick() {
         return;
     }
     const v = $('#entryTime').value, t = v ? +new Date(v) : Date.now();
-    $('#confirmMain').textContent = `➕ ${CAT_EMOJI[picked.category] || '🥤'} ${picked.name} hinzufügen`;
+    $('#confirmMain').innerHTML = `${ic('plus')}<span>${esc(picked.name)} hinzufügen</span>`;
     $('#confirmSub').hidden = false;
     $('#confirmSub').textContent = `${fmtWhen(t)} Uhr${$('#foodToggle').checked ? ' · mit Essensgrundlage' : ''}`;
 }
 function buildEntry() {
-    $('#quickBtns').innerHTML = QUICK.map((q, i) => `<button class="chip" type="button" data-quick="${i}" aria-pressed="false"><span class="text-2xl">${q.emoji}</span>${esc(q.name)}</button>`).join('');
+    $('#quickBtns').innerHTML = QUICK.map((q, i) => `<button class="chip" type="button" data-quick="${i}" aria-pressed="false">${catIc(q.category)}<span>${esc(q.name)}</span></button>`).join('');
     const opt = (d, v) => `<option value="${v}">${esc(d.name)} · ${d.abv > 0 ? nf(d.abv, 1) + ' %' : nf(d.caffeine_mg, 0) + ' mg'}</option>`;
     $('#stdSel').innerHTML = '<option value="">Getränk auswählen …</option>' + STANDARD.map((g, gi) => `<optgroup label="${esc(g.group)}">${g.items.map((d, i) => opt(d, `s${gi}_${i}`)).join('')}</optgroup>`).join('')
         + (S.custom.length ? `<optgroup label="Eigene">${S.custom.map(d => opt(d, 'c' + d.id)).join('')}</optgroup>` : '');
@@ -980,9 +1247,9 @@ $('#manualForm').onsubmit = async e => {
 /* ═════════ Konto, Thema, Start ═════════ */
 function applyTheme(dark, save) {
     document.documentElement.classList.toggle('dark', dark);
-    $('#themeToggle').textContent = dark ? '☀️' : '🌙';
+    $('#themeToggle').innerHTML = ic(dark ? 'sun' : 'moon');
     $('#themeToggle').setAttribute('aria-label', dark ? 'Zum hellen Modus wechseln' : 'Zum dunklen Modus wechseln');
-    document.querySelector('meta[name="theme-color"]').content = dark ? '#000000' : '#d97706';
+    document.querySelector('meta[name="theme-color"]').content = dark ? '#000000' : '#f2f2f7';
     if (save) { try { localStorage.setItem('overall-theme', dark ? 'dark' : 'light'); } catch (e) {} }
     if (S.user && S.body) render();
 }
@@ -1002,8 +1269,8 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#meMen
 
 /* ───────── Eigenes Profilbild (wie im Quest Log) ─────────
    Das Bild liegt im privaten Bucket "avatars", der Pfad steht in overall_profiles.avatar_path (ein Bild für alle Apps).
-   Angezeigt wird es über einen kurzlebigen signierten Link. Ohne Bild: 👤 im Button, Initialen im Menü. */
-const AVA_COLORS = ['#7c3aed', '#db2777', '#ea580c', '#0891b2', '#16a34a', '#4f46e5', '#ca8a04', '#dc2626'];
+   Angezeigt wird es über einen kurzlebigen signierten Link. Ohne Bild: Personen-Symbol im Button, Initialen im Menü. */
+const AVA_COLORS = ['#00788a', '#8a5a2b', '#5856d6', '#0066cc', '#a2453a', '#4a7356'];
 function initials(name) { return String(name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'; }
 function avaHtml(name, url) {
     if (url) return `<img src="${esc(url)}" alt="">`;
@@ -1013,8 +1280,7 @@ function avaHtml(name, url) {
 var myName = "", myAvatar = null;
 function paintMyAvatar() {
     const b = $('#meBtn');
-    b.classList.toggle('has-photo', !!myAvatar);
-    b.innerHTML = myAvatar ? `<img src="${esc(myAvatar)}" alt="">` : '👤';
+    b.innerHTML = myAvatar ? `<img src="${esc(myAvatar)}" alt="">` : ic('person');
     $('#menuName').textContent = myName;
     $('#menuAva').innerHTML = avaHtml(myName, myAvatar);
 }
@@ -1027,7 +1293,7 @@ async function loadMyAvatar() {
             const r = check(await sb.storage.from('avatars').createSignedUrl(prof.avatar_path, 3600));
             myAvatar = (r && r.signedUrl) || null;
         }
-    } catch (e) { /* offline oder kein Bild → 👤 / Initialen */ }
+    } catch (e) { /* offline oder kein Bild → Symbol / Initialen */ }
     paintMyAvatar();
 }
 $('#logoutBtn').onclick = async () => { clearCache(); try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {} location.reload(); };
@@ -1036,20 +1302,20 @@ $('#loginForm').onsubmit = async e => {
     e.preventDefault();
     const m = $('#loginMsg'); m.hidden = true;
     const { error } = await sb.auth.signInWithPassword({ email: $('#loginMail').value.trim(), password: $('#loginPw').value });
-    if (error) { m.hidden = false; m.className = 'text-sm font-semibold text-red-600'; m.textContent = errorText(error); }
+    if (error) { m.hidden = false; m.className = 'msg'; m.textContent = errorText(error); }
 };
 $('#forgotBtn').onclick = async () => {
     const m = $('#loginMsg'), email = $('#loginMail').value.trim();
     m.hidden = false;
-    if (!email) { m.className = 'text-sm font-semibold text-red-600'; m.textContent = 'Bitte zuerst die E-Mail eintragen.'; return; }
+    if (!email) { m.className = 'msg'; m.textContent = 'Bitte zuerst die E-Mail eintragen.'; return; }
     const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
-    m.className = 'text-sm font-semibold ' + (error ? 'text-red-600' : 'text-emerald-600');
+    m.className = 'msg' + (error ? '' : ' ok');
     m.textContent = error ? errorText(error) : 'Wir haben dir einen Link zum Zurücksetzen geschickt.';
 };
 
 $('#personSel').onchange = async () => {
     S.viewId = $('#personSel').value;
-    try { await loadDrinks(); } catch (e) { banner('⚠️ ' + esc(errorText(e))); S.drinks = []; }
+    try { await loadDrinks(); } catch (e) { banner(ic('alert') + '<span>' + esc(errorText(e)) + '</span>'); S.drinks = []; }
     recompute(); render();
 };
 
@@ -1068,7 +1334,7 @@ async function start(session) {
         cacheSet('people_' + S.user.id, { role: S.role, people: S.people });
     } catch (e) {
         const c = cacheGet('people_' + S.user.id);
-        if (!c || !isNetErr(e)) { show('app'); banner('⚠️ ' + esc(errorText(e))); return; }
+        if (!c || !isNetErr(e)) { show('app'); banner(ic('alert') + '<span>' + esc(errorText(e)) + '</span>'); return; }
         S.role = c.role; S.people = c.people;
     }
     const me = S.people.find(p => p.is_me);
@@ -1078,9 +1344,9 @@ async function start(session) {
     /* Admin: Umschalter auf die Bereiche der Mitglieder */
     const sel = $('#personSel');
     sel.hidden = !(S.role === 'admin' && S.people.length > 1);
-    sel.innerHTML = S.people.map(p => `<option value="${p.id}">${p.is_me ? '🙋 Ich' : '👤 ' + esc(p.display_name)}</option>`).join('');
+    sel.innerHTML = S.people.map(p => `<option value="${p.id}">${p.is_me ? 'Ich' : esc(p.display_name)}</option>`).join('');
     show('app');
-    try { await loadDrinks(); } catch (e) { banner('⚠️ ' + esc(errorText(e))); }
+    try { await loadDrinks(); } catch (e) { banner(ic('alert') + '<span>' + esc(errorText(e)) + '</span>'); }
     buildEntry();
     $('#entryTime').value = localInput(Date.now());
     recompute(); render();
