@@ -18,7 +18,7 @@ Gleiche Apple-Designsprache wie das Dashboard (mvs2-bot.github.io), „Zuhause�
 Schriften 12–22 px (Basis 14 px), weiße Karten auf `#f2f2f7`, im Dunkeln dunkelgraue Karten (`#1c1c1e`) auf Schwarz,
 Linien-Symbole statt Emojis (SVG-Sprite oben im `<body>`). Alle Farben stehen als CSS-Variablen in `:root` und `.dark`.
 
-- Akzent Petrol `#00788a` (dunkel `#5ac8d6`), Koffein Braun `#8a5a2b` (dunkel `#d4a373`).
+- Akzent Gold: Text und Symbole `#8a6a00`, Flächen `#f5c400` mit dunkler Schrift (dunkel `#ffd60a`), Koffein Braun `#8a5a2b` (dunkel `#d4a373`).
 - Pegelstufen `--lv0` … `--lv4` von Grün (nüchtern) bis Rot (ab 1,1 ‰).
 - Bei Änderungen an Dateien die Cache-Version in `sw.js` hochzählen.
 
