@@ -8,7 +8,7 @@ Nutzt das gemeinsame Supabase-Core-Projekt (Login und Profil wie TravelBase und 
 | Datei | Inhalt |
 | --- | --- |
 | `index.html` | die komplette App (eigenes CSS, Chart.js und supabase-js über CDN) |
-| `supabase/pegeltracker_core.sql` | Tabellen, Zugriffsregeln und RPC im Core-Projekt |
+| Datenbank | Migration `…_pegeltracker_core` im Repo `supabase-core` (Tabellen, Zugriffsregeln, RPC) |
 | `manifest.json`, `sw.js`, `icon.svg` | PWA: installierbar, App-Hülle offline verfügbar |
 | `icons/` | App-Icons (Startbildschirm, maskable, Apple, Favicon) |
 
@@ -24,7 +24,7 @@ Linien-Symbole statt Emojis (SVG-Sprite oben im `<body>`). Alle Farben stehen al
 
 ## Einrichtung
 
-1. `supabase/pegeltracker_core.sql` im Core-Projekt ausführen (SQL Editor). Registriert die App `pegeltracker`.
+1. Migration `…_pegeltracker_core` aus `supabase-core` im Core-Projekt einspielen. Registriert die App `pegeltracker`.
 2. Im Dashboard unter Admin-Einstellungen Ines für den PegelTracker als **Mitglied** freischalten.
    Globale Admins haben automatisch Admin-Rechte.
 3. Im Profil (Kontoeinstellungen) Geschlecht, Größe, Gewicht und Geburtsdatum pflegen. Fehlt etwas, rechnet die App mit Standardwerten und zeigt einen Hinweis.
