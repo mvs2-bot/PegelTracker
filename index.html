@@ -79,22 +79,29 @@
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
             background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; }
 
-        /* Kontomenü */
+        /* Kontomenü (einheitlich in allen Apps, Vorlage: JobTracker) */
         .me { position: relative; }
-        .me-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; width: 280px; max-width: calc(100vw - 32px); padding: 6px; border-radius: 14px; box-shadow: var(--pop); background: var(--card); color: var(--text); }
-        .me-head { display: flex; gap: 10px; align-items: center; padding: 8px 10px 10px; margin-bottom: 4px; border-bottom: 1px solid var(--sep); min-width: 0; }
-        .me-head > div { min-width: 0; }
-        .me-head b { display: block; font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ava { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--well); }
-        .ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .ava .ini { width: 100%; height: 100%; display: grid; place-items: center; color: #fff; font-size: 14px; font-weight: 600; }
-        .me-item { display: flex; width: 100%; align-items: center; gap: 10px; min-height: 40px; padding: 8px 10px; border: 0; border-radius: 8px;
-            background: none; color: var(--ink); font-size: 14px; font-weight: 500; text-align: left; text-decoration: none; }
-        .me-item .ic { width: 18px; height: 18px; color: var(--mute); }
-        .me-item:hover, .me-item:focus-visible { background: var(--hover); outline: none; }
-        .me-item small { margin-left: auto; font-size: 11px; color: var(--mute); }
-        .me-item.danger, .me-item.danger .ic { color: var(--danger); }
-        .me-sep { height: 1px; margin: 4px 6px; background: var(--sep); }
+        .pm-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; width: 290px; max-width: calc(100vw - 32px); padding: 6px; color: var(--text); border-radius: 14px; box-shadow: var(--pop); background: var(--card); text-align: left; }
+        .pm-head { display: flex; gap: 10px; align-items: center; padding: 8px 10px 10px; min-width: 0; }
+        .pm-head > div { min-width: 0; }
+        .pm-head b { display: block; font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pm-head small { display: block; font-size: 12px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pm-ava { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; color: #fff; font-size: 14px; font-weight: 600; }
+        .pm-ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .pm-sync { display: flex; align-items: center; gap: 8px; margin: 0 4px 6px; padding: 8px 10px; border-radius: 10px; background: var(--well); font-size: 12px; color: var(--text); }
+        .pm-sync i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok, #34c759); flex: none; }
+        .pm-sync i.pending { background: var(--warn, #ff9f0a); } .pm-sync i.error { background: var(--danger); }
+        .pm-sync span { min-width: 0; }
+        .pm-sync b { font-weight: 600; color: var(--ink); }
+        .pm-role { display: inline-block; margin-top: 3px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--p1-soft); color: var(--p1); }
+        .pm-item { display: flex; width: 100%; align-items: center; gap: 10px; min-height: 40px; padding: 8px 10px; border: 0; border-radius: 8px;
+          background: none; color: var(--ink); font: inherit; font-size: 14px; font-weight: 500; text-align: left; text-decoration: none; cursor: pointer; }
+        .pm-item .ic { width: 18px; height: 18px; color: var(--mute); flex: none; }
+        .pm-item:hover, .pm-item:focus-visible { background: var(--hover); outline: none; }
+        .pm-item small { margin-left: auto; font-size: 11px; color: var(--mute); white-space: nowrap; }
+        .pm-item.danger, .pm-item.danger .ic { color: var(--danger); }
+        .pm-sep { height: 1px; margin: 4px 6px; background: var(--sep); }
+        .pm-ava .ini { width: 100%; height: 100%; display: grid; place-items: center; }
 
         /* Segmente wie in iOS */
         .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: color-mix(in srgb, var(--mute) 14%, transparent); border-radius: 9px; padding: 2px; gap: 2px; }
@@ -360,13 +367,17 @@
             <button id="themeToggle" class="icon-btn" type="button" aria-label="Zum dunklen Modus wechseln"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></button>
             <div class="me">
                 <button id="meBtn" class="icon-btn" type="button" aria-label="Mein Konto" title="Mein Konto" aria-haspopup="menu" aria-expanded="false" aria-controls="meMenu" hidden><svg class="ic" aria-hidden="true"><use href="#i-person"/></svg></button>
-                <div id="meMenu" class="me-menu" role="menu" hidden>
-                    <div class="me-head"><span id="menuAva" class="ava"></span><div><b id="menuName"></b></div></div>
-                    <a class="me-item" href="/" role="menuitem"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg>Dashboard</a>
-                    <a class="me-item" href="/konto.html?from=pegeltracker#app-pegeltracker" role="menuitem"><svg class="ic" aria-hidden="true"><use href="#i-gear"/></svg>Kontoeinstellungen</a>
-                    <a id="adminLink" class="me-item" href="/admin.html?from=pegeltracker#app-pegeltracker" role="menuitem" hidden><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>Admin-Einstellungen<small>nur Admins</small></a>
-                    <div class="me-sep"></div>
-                    <button id="logoutBtn" class="me-item danger" type="button" role="menuitem"><svg class="ic" aria-hidden="true"><use href="#i-logout"/></svg>Abmelden</button>
+                <div id="meMenu" class="pm-menu" role="menu" hidden>
+                    <div class="pm-head">
+                        <span id="menuAva" class="pm-ava"></span>
+                        <div><b id="menuName"></b><small id="menuMail"></small><span id="menuRole" class="pm-role" hidden></span></div>
+                    </div>
+                    <div id="menuSync" class="pm-sync" role="status" hidden><i></i><span><b>Cloud-Sync</b> · <span></span></span></div>
+                    <a class="pm-item" href="/" role="menuitem"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg>Dashboard</a>
+                    <a class="pm-item" href="/konto.html?from=pegeltracker#app-pegeltracker" role="menuitem"><svg class="ic" aria-hidden="true"><use href="#i-gear"/></svg>Kontoeinstellungen</a>
+                    <a id="adminLink" class="pm-item" href="/admin.html?from=pegeltracker#app-pegeltracker" role="menuitem" hidden><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>Admin-Einstellungen<small>nur Admins</small></a>
+                    <div class="pm-sep"></div>
+                    <button id="logoutBtn" class="pm-item danger" type="button" role="menuitem"><svg class="ic" aria-hidden="true"><use href="#i-logout"/></svg>Abmelden</button>
                 </div>
             </div>
         </div>
@@ -825,12 +836,12 @@ async function loadDrinks() {
         S.drinks = check(await sb.from('pegel_drinks').select('*').eq('user_id', S.viewId).gte('consumed_at', since).order('consumed_at'));
         if (viewingSelf()) S.custom = check(await sb.from('pegel_custom_drinks').select('*').order('name'));
         cacheSet(key, { drinks: S.drinks, custom: S.custom });
-        banner(null);
+        banner(null); syncOk();
     } catch (e) {
         const c = cacheGet(key);
         if (!c || !isNetErr(e)) throw e;
         S.drinks = c.drinks; S.custom = c.custom || [];
-        banner(ic('offline') + '<span>Offline: du siehst den zuletzt geladenen Stand.</span>');
+        banner(ic('offline') + '<span>Offline: du siehst den zuletzt geladenen Stand.</span>'); syncFail(e);
     }
 }
 
@@ -844,13 +855,13 @@ async function addDrink(d) {
     try {
         const saved = check(await sb.from('pegel_drinks').insert(row).select().single());
         S.drinks.push(saved);
-        cacheSet('drinks_' + S.viewId, { drinks: S.drinks, custom: S.custom });
+        cacheSet('drinks_' + S.viewId, { drinks: S.drinks, custom: S.custom }); syncOk();
         flash(`${row.name} eingetragen.`);
         $('#entryTime').value = localInput(Date.now()); entryTimeTouched = false;
         clearPick();
         recompute(); render();
         return true;
-    } catch (e) { flash(errorText(e), false); return false; }
+    } catch (e) { flash(errorText(e), false); syncFail(e); return false; }
 }
 
 /* Zeitpunkt eines vorhandenen Getränks ändern (aktuelle Session und Historie) */
@@ -876,7 +887,7 @@ async function saveTimeEdit() {
     try {
         const saved = check(await sb.from('pegel_drinks').update({ consumed_at: when.toISOString() }).eq('id', d.id).select().single());
         Object.assign(d, saved);
-        cacheSet('drinks_' + S.viewId, { drinks: S.drinks, custom: S.custom });
+        cacheSet('drinks_' + S.viewId, { drinks: S.drinks, custom: S.custom }); syncOk();
         $('#timeDlg').close();
         recompute(); render();
         /* Detailansicht neu aufbauen – die Session kann sich durch die neue Zeit verschoben haben */
@@ -896,7 +907,7 @@ async function deleteDrink(id) {
     const rest = old ? old.drinks.filter(x => String(x.id) !== String(id)).map(x => String(x.id)) : [];
     try {
         check(await sb.from('pegel_drinks').delete().eq('id', id));
-        S.drinks = S.drinks.filter(d => d.id !== id);
+        S.drinks = S.drinks.filter(d => d.id !== id); syncOk();
         recompute(); render();
         /* Detailansicht offen lassen und neu aufbauen; schließen nur, wenn die Session leer ist */
         if (detailWasOpen) {
@@ -1261,28 +1272,49 @@ function closeMenu() { $('#meMenu').hidden = true; $('#meBtn').setAttribute('ari
 $('#meBtn').onclick = e => {
     e.stopPropagation();
     if (!$('#meMenu').hidden) return closeMenu();
+    paintSync();
     $('#meMenu').hidden = false; $('#meBtn').setAttribute('aria-expanded', 'true');
-    const first = $('#meMenu .me-item:not([hidden])'); if (first) first.focus();
+    const first = $('#meMenu .pm-item:not([hidden])'); if (first) first.focus();
 };
-$('#meMenu').onclick = e => { if (e.target.closest('.me-item')) closeMenu(); };
+$('#meMenu').onclick = e => { if (e.target.closest('.pm-item')) closeMenu(); };
 document.addEventListener('click', e => { if (!$('#meMenu').hidden && !$('#meMenu').contains(e.target)) closeMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#meMenu').hidden) { closeMenu(); $('#meBtn').focus(); } });
 
 /* ───────── Eigenes Profilbild (wie im Quest Log) ─────────
    Das Bild liegt im privaten Bucket "avatars", der Pfad steht in overall_profiles.avatar_path (ein Bild für alle Apps).
    Angezeigt wird es über einen kurzlebigen signierten Link. Ohne Bild: Personen-Symbol im Button, Initialen im Menü. */
-const AVA_COLORS = ['#b45309', '#8a5a2b', '#5856d6', '#0066cc', '#a2453a', '#4a7356'];
+const AVA_COLORS = ['#0b6e79', '#4a7356', '#b25000', '#5856d6', '#0066cc', '#a2453a'];
 function initials(name) { return String(name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'; }
 function avaHtml(name, url) {
     if (url) return `<img src="${esc(url)}" alt="">`;
     let h = 0; for (const c of String(name || '')) h = (h * 31 + c.codePointAt(0)) >>> 0;
     return `<span class="ini" style="background:${AVA_COLORS[h % AVA_COLORS.length]}">${esc(initials(name))}</span>`;
 }
+const ROLE_LABELS = { admin: 'Admin', member: 'Mitglied', guest: 'Gast' };
+
+/* Sync-Anzeige im Kontomenü (wie JobTracker) */
+const SYNC = { last: null, err: false };
+function syncOk() { SYNC.last = new Date(); SYNC.err = false; paintSync(); }
+function syncFail() { SYNC.err = !isNetErr(arguments[0]); paintSync(); }
+function paintSync() {
+    const box = $('#menuSync'); if (!box) return;
+    box.hidden = !S.body;
+    const off = !navigator.onLine;
+    box.querySelector('i').className = off ? 'pending' : SYNC.err ? 'error' : '';
+    box.querySelector('span span').textContent = off ? 'Offline · zuletzt geladener Stand'
+        : SYNC.err ? 'Speichern fehlgeschlagen'
+        : SYNC.last ? 'Verbunden · zuletzt ' + SYNC.last.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : 'Verbunden';
+}
+window.addEventListener('online', paintSync);
+window.addEventListener('offline', paintSync);
 var myName = "", myAvatar = null;
 function paintMyAvatar() {
     const b = $('#meBtn');
     b.innerHTML = myAvatar ? `<img src="${esc(myAvatar)}" alt="">` : ic('person');
     $('#menuName').textContent = myName;
+    $('#menuMail').textContent = (S.user && S.user.email) || '';
+    $('#menuRole').hidden = !S.role;
+    $('#menuRole').textContent = ROLE_LABELS[S.role] || S.role || '';
     $('#menuAva').innerHTML = avaHtml(myName, myAvatar);
 }
 async function loadMyAvatar() {
@@ -1331,7 +1363,7 @@ async function start(session) {
     $('#meBtn').hidden = !S.user;
     if (!S.user) { show('login'); return; }
     try {
-        if (!(await loadPeople())) { show('none'); return; }
+        if (!(await loadPeople())) { myName = S.user.email.split('@')[0]; paintMyAvatar(); loadMyAvatar(); show('none'); return; }
         cacheSet('people_' + S.user.id, { role: S.role, people: S.people });
     } catch (e) {
         const c = cacheGet('people_' + S.user.id);
