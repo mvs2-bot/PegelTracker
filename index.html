@@ -290,9 +290,19 @@
         .chip.caf[aria-pressed="true"] { box-shadow: inset 0 0 0 1.5px var(--caf); }
 
         /* Nachtragen */
-        .bf { margin-bottom: 12px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; scroll-margin-top: 80px; }
-        .bf > * { margin-bottom: 0 !important; }
-        .bf .card-head .link { margin-left: auto; }
+        .bf { display: block; margin-bottom: 12px; scroll-margin-top: 80px; }
+        .bf summary { margin-bottom: 0; list-style: none; cursor: pointer; }
+        .bf summary::-webkit-details-marker { display: none; }
+        .bf summary .chev { width: 16px; height: 16px; color: var(--mute); transition: transform .2s; }
+        .bf[open] summary .chev { transform: rotate(90deg); }
+        .bf-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 14px; }
+        .bf-body > * { margin-bottom: 0 !important; }
+        .bf-top { display: flex; align-items: center; justify-content: space-between; margin: 0 2px -4px; }
+        .bf .btn-add .m { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+        .bf .btn-add .m .ic { width: 18px; height: 18px; stroke-width: 2.2; }
+        .bf .btn-add .s { font-size: 12px; font-weight: 500; opacity: .85; }
+        .q3 .chip[aria-pressed="true"] { background: var(--p1-soft); box-shadow: inset 0 0 0 1.5px var(--p1); }
+        .q3 .chip.caf[aria-pressed="true"] { background: var(--caf-soft); box-shadow: inset 0 0 0 1.5px var(--caf); }
         .bf-cal { position: relative; cursor: pointer; }
         .bf-cal input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
         .days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
@@ -588,9 +598,11 @@
 
         <!-- Historie -->
         <section id="histView" hidden>
-            <div id="bfCard" class="card bf">
-                <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg></span><h3>Nachtragen</h3>
-                    <label class="link bf-cal">Kalender<input id="bfDate" type="date" aria-label="Tag aus dem Kalender wählen"></label></div>
+            <details id="bfCard" class="card bf">
+                <summary class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg></span><h3>Nachtragen</h3>
+                    <svg class="ic chev" aria-hidden="true"><use href="#i-right"/></svg></summary>
+                <div class="bf-body">
+                <div class="bf-top"><span class="eyebrow">Tag</span><label class="link bf-cal">Kalender<input id="bfDate" type="date" aria-label="Tag aus dem Kalender wählen"></label></div>
                 <div id="bfDays" class="days"></div>
                 <div class="group"><span id="bfDayLabel" class="eyebrow"></span>
                     <div id="bfHours" class="wp-chips scroll"></div>
@@ -604,10 +616,12 @@
                 <select id="bfSel" class="inp bf-sel" aria-label="Weiteres Getränk nachtragen"></select>
                 <label class="toggle"><span class="t"><svg class="ic" aria-hidden="true"><use href="#i-food"/></svg>Gute Essensgrundlage</span>
                     <span class="switch"><input id="bfFood" type="checkbox"><span></span></span></label>
-                <p class="hint">Jedes Antippen trägt sofort ein. Das nächste Getränk rückt automatisch 30 min weiter.</p>
+                <button id="bfAdd" class="btn-add" type="button" disabled><span class="m">Erst Getränk auswählen</span><span class="s" hidden></span></button>
+                <p class="hint">Nach dem Hinzufügen rückt die Zeit für das nächste Getränk automatisch 30 min weiter.</p>
                 <ul id="bfList" class="drinks"></ul>
                 <div id="bfMsg" class="msg" hidden></div>
-            </div>
+                </div>
+            </details>
             <div id="histList" class="hist"></div>
             <p id="histEmpty" class="card empty" hidden>Noch keine abgeschlossenen Sessions.</p>
         </section>
@@ -1408,9 +1422,9 @@ $('#manualForm').onsubmit = async e => {
 };
 
 /* ═════════ Nachtragen (Historie) ═════════
-   Tag einmal wählen, danach trägt jedes Antippen sofort ein. Der Zeitpunkt rückt danach um BF_GAP weiter. */
+   Tag einmal wählen, Getränk auswählen, mit „Hinzufügen“ eintragen. Der Zeitpunkt rückt danach um BF_GAP weiter. */
 const BF_GAP = 30 * MIN;
-const BF = { day: null, t: null, busy: false, scrolledFor: null };
+const BF = { day: null, t: null, busy: false, scrolledFor: null, pick: null };
 const dayStart = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return +d; };
 const addDays = (t, n) => { const d = new Date(t); d.setDate(d.getDate() + n); return dayStart(d); };
 const atHour = (day, h) => { const d = new Date(day); d.setHours(h, 0, 0, 0); return +d; };
@@ -1458,8 +1472,14 @@ function renderBackfill(now = Date.now()) {
     const future = BF.t > now;
     $('#bfWhen').textContent = `Nächstes Getränk: ${fmtDayShort(BF.t)}, ${fmtTime(BF.t)} Uhr`;
     $('[data-bf-step="15"]').disabled = BF.t + 15 * MIN > now;
-    document.querySelectorAll('[data-bf-quick]').forEach(b => { b.disabled = BF.busy || future; });
-    $('#bfSel').disabled = BF.busy || future;
+    const qi = QUICK.indexOf(BF.pick);
+    document.querySelectorAll('[data-bf-quick]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.bfQuick === qi)));
+    if (qi >= 0) $('#bfSel').value = '';
+    const add = $('#bfAdd');
+    add.disabled = !BF.pick || BF.busy || future;
+    add.querySelector('.m').innerHTML = BF.pick ? `${ic('plus')}<span>${esc(BF.pick.name)} hinzufügen</span>` : 'Erst Getränk auswählen';
+    add.querySelector('.s').hidden = !BF.pick;
+    add.querySelector('.s').textContent = `${fmtDayShort(BF.t)}, ${fmtTime(BF.t)} Uhr${$('#bfFood').checked ? ' · mit Essensgrundlage' : ''}`;
     const list = bfDrinks();
     $('#bfList').innerHTML = list.length ? list.map(drinkRow).join('')
         : '<li><span class="none">An diesem Tag ist noch nichts eingetragen.</span></li>';
@@ -1471,7 +1491,7 @@ async function bfAdd(d) {
     const at = BF.t;
     try {
         await insertDrink(d, at, $('#bfFood').checked);
-        BF.t = at + BF_GAP;
+        BF.t = at + BF_GAP; BF.pick = null; $('#bfSel').value = '';
         bfMsg(`${d.name} am ${fmtDayShort(at)} um ${fmtTime(at)} Uhr eingetragen.`);
     } catch (e) { bfMsg(errorText(e), false); }
     BF.busy = false;
@@ -1482,12 +1502,17 @@ document.addEventListener('click', e => {
     if (b.dataset.bfDay) return bfSetDay(+b.dataset.bfDay);
     if (b.dataset.bfHour) { BF.t = atHour(BF.day, +b.dataset.bfHour); $('#bfMsg').hidden = true; return renderBackfill(); }
     if (b.dataset.bfStep) { BF.t = Math.min(BF.t + +b.dataset.bfStep * MIN, roundDown5(Date.now())); return renderBackfill(); }
-    if (b.dataset.bfQuick) return bfAdd(QUICK[+b.dataset.bfQuick]);
+    if (b.dataset.bfQuick) { const d = QUICK[+b.dataset.bfQuick]; BF.pick = BF.pick === d ? null : d; return renderBackfill(); }
     const s = S.sessions[+b.dataset.bfSession]; if (!s) return;
+    $('#bfCard').open = true;
     bfSetDay(s.start, +new Date(s.drinks[s.drinks.length - 1].consumed_at) + BF_GAP);
     $('#bfCard').scrollIntoView({ block: 'start' });
 });
-$('#bfSel').onchange = async () => { const d = stdDrink($('#bfSel').value); $('#bfSel').value = ''; await bfAdd(d); };
+$('#bfSel').onchange = () => { BF.pick = stdDrink($('#bfSel').value) || null; renderBackfill(); };
+$('#bfAdd').onclick = () => bfAdd(BF.pick);
+$('#bfFood').addEventListener('change', () => renderBackfill());
+/* eingeklappt lässt sich die Stundenleiste nicht scrollen, daher beim Aufklappen nachholen */
+$('#bfCard').addEventListener('toggle', () => { if ($('#bfCard').open) { BF.scrolledFor = null; renderBackfill(); } });
 $('#bfDate').addEventListener('change', () => { if ($('#bfDate').value) bfSetDay(new Date($('#bfDate').value + 'T00:00')); });
 
 /* ═════════ Konto, Thema, Start ═════════ */
