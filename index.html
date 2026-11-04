@@ -1429,14 +1429,16 @@ const dayStart = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return +d
 const addDays = (t, n) => { const d = new Date(t); d.setDate(d.getDate() + n); return dayStart(d); };
 const atHour = (day, h) => { const d = new Date(day); d.setHours(h, 0, 0, 0); return +d; };
 const roundDown5 = t => Math.floor(t / (5 * MIN)) * 5 * MIN;
+/* Getränke des gewählten Tages; nach Mitternacht nachgetragene zählen bis max. 12 h danach mit */
 const bfDrinks = () => {
-    const to = Math.max(addDays(BF.day, 1), BF.t);
+    const next = addDays(BF.day, 1), to = Math.max(next, Math.min(BF.t, next + 12 * H));
     return S.drinks.filter(d => { const t = +new Date(d.consumed_at); return t >= BF.day && t < to; })
         .sort((a, b) => new Date(a.consumed_at) - new Date(b.consumed_at));
 };
 /* Startzeit für einen Tag: nach dem letzten Getränk, sonst 20 Uhr; nie in der Zukunft */
 function bfSetDay(day, t) {
     BF.day = dayStart(day);
+    BF.t = BF.day;   /* alte Zeit (z. B. heute) darf die Liste des neuen Tages nicht verlängern */
     const list = bfDrinks();
     BF.t = Math.min(t ?? (list.length ? +new Date(list[list.length - 1].consumed_at) + BF_GAP : atHour(BF.day, 20)), roundDown5(Date.now()));
     $('#bfMsg').hidden = true;
