@@ -100,6 +100,9 @@
         .pm-item:hover, .pm-item:focus-visible { background: var(--hover); outline: none; }
         .pm-item small { margin-left: auto; font-size: 11px; color: var(--mute); white-space: nowrap; }
         .pm-item.danger, .pm-item.danger .ic { color: var(--danger); }
+        .pm-view { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 4px 4px 10px; font-size: 14px; font-weight: 500; color: var(--ink); }
+        .pm-view .ic { width: 18px; height: 18px; color: var(--mute); flex: none; }
+        .pm-view .hdr-sel { margin-left: auto; background-color: var(--well); box-shadow: none; }
         .pm-sep { height: 1px; margin: 4px 6px; background: var(--sep); }
         .pm-ava .ini { width: 100%; height: 100%; display: grid; place-items: center; }
 
@@ -410,7 +413,6 @@
             <div id="subline" class="sub">Promille &amp; Koffein im Blick</div>
         </div>
         <div class="acts">
-            <select id="personSel" class="hdr-sel" aria-label="Bereich wählen" title="Bereich wählen" hidden></select>
             <button id="themeToggle" class="icon-btn" type="button" aria-label="Zum dunklen Modus wechseln"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></button>
             <div class="me">
                 <button id="meBtn" class="icon-btn" type="button" aria-label="Mein Konto" title="Mein Konto" aria-haspopup="menu" aria-expanded="false" aria-controls="meMenu" hidden><svg class="ic" aria-hidden="true"><use href="#i-person"/></svg></button>
@@ -420,6 +422,8 @@
                         <div><b id="menuName"></b><small id="menuMail"></small><span id="menuRole" class="pm-role" hidden></span></div>
                     </div>
                     <div id="menuSync" class="pm-sync" role="status" hidden><i></i><span><b>Cloud-Sync</b> · <span></span></span></div>
+                    <label id="personRow" class="pm-view" hidden><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg>Bereich ansehen
+                        <select id="personSel" class="hdr-sel" aria-label="Bereich wählen"></select></label>
                     <a class="pm-item" href="/" role="menuitem"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg>Dashboard</a>
                     <a class="pm-item" href="/konto.html?from=pegeltracker#app-pegeltracker" role="menuitem"><svg class="ic" aria-hidden="true"><use href="#i-gear"/></svg>Kontoeinstellungen</a>
                     <a id="adminLink" class="pm-item" href="/admin.html?from=pegeltracker#app-pegeltracker" role="menuitem" hidden><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>Admin-Einstellungen<small>nur Admins</small></a>
@@ -1533,6 +1537,7 @@ $('#forgotBtn').onclick = async () => {
 };
 
 $('#personSel').onchange = async () => {
+    closeMenu();
     S.viewId = $('#personSel').value;
     try { await loadDrinks(); } catch (e) { banner(ic('alert') + '<span>' + esc(errorText(e)) + '</span>'); S.drinks = []; }
     recompute(); render();
@@ -1562,7 +1567,7 @@ async function start(session) {
     S.viewId = S.user.id;
     /* Admin: Umschalter auf die Bereiche der Mitglieder */
     const sel = $('#personSel');
-    sel.hidden = !(S.role === 'admin' && S.people.length > 1);
+    $('#personRow').hidden = !(S.role === 'admin' && S.people.length > 1);
     sel.innerHTML = S.people.map(p => `<option value="${p.id}">${p.is_me ? 'Ich' : esc(p.display_name)}</option>`).join('');
     show('app');
     try { await loadDrinks(); } catch (e) { banner(ic('alert') + '<span>' + esc(errorText(e)) + '</span>'); }
