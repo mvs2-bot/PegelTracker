@@ -297,23 +297,11 @@
         .bf[open] summary .chev { transform: rotate(90deg); }
         .bf-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 14px; }
         .bf-body > * { margin-bottom: 0 !important; }
-        .bf-top { display: flex; align-items: center; justify-content: space-between; margin: 0 2px -4px; }
         .bf .btn-add .m { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
         .bf .btn-add .m .ic { width: 18px; height: 18px; stroke-width: 2.2; }
         .bf .btn-add .s { font-size: 12px; font-weight: 500; opacity: .85; }
         .q3 .chip[aria-pressed="true"] { background: var(--p1-soft); box-shadow: inset 0 0 0 1.5px var(--p1); }
         .q3 .chip.caf[aria-pressed="true"] { background: var(--caf-soft); box-shadow: inset 0 0 0 1.5px var(--caf); }
-        .bf-cal { position: relative; cursor: pointer; }
-        .bf-cal input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-        .days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
-        .day { position: relative; display: grid; justify-items: center; gap: 1px; padding: 7px 0 10px; border: 0; border-radius: 12px; background: var(--well); color: var(--ink); transition: background .15s; }
-        .day:hover { background: var(--hover); }
-        .day small { font-size: 11px; font-weight: 500; color: var(--mute); }
-        .day b { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
-        .day i { position: absolute; bottom: 4px; width: 4px; height: 4px; border-radius: 50%; background: var(--p1); }
-        .day[aria-pressed="true"] { background: var(--p1-fill); color: var(--on-p1); }
-        .day[aria-pressed="true"] small { color: var(--on-p1); }
-        .day[aria-pressed="true"] i { background: var(--on-p1); }
         .wp-chips.scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
         .wp-chips.scroll::-webkit-scrollbar { display: none; }
         .wp-chip { flex: none; }
@@ -602,8 +590,10 @@
                 <summary class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg></span><h3>Nachtragen</h3>
                     <svg class="ic chev" aria-hidden="true"><use href="#i-right"/></svg></summary>
                 <div class="bf-body">
-                <div class="bf-top"><span class="eyebrow">Tag</span><label class="link bf-cal">Kalender<input id="bfDate" type="date" aria-label="Tag aus dem Kalender wählen"></label></div>
-                <div id="bfDays" class="days"></div>
+                <div class="group"><span class="eyebrow">Tag</span>
+                    <label class="wp-main bf-cal"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg><span id="bfDayText"></span>
+                        <input id="bfDate" type="date" class="wp-date" aria-label="Tag im Kalender wählen"></label>
+                </div>
                 <div class="group"><span id="bfDayLabel" class="eyebrow"></span>
                     <div id="bfHours" class="wp-chips scroll"></div>
                 </div>
@@ -1451,16 +1441,11 @@ function renderBackfill(now = Date.now()) {
     if (!viewingSelf()) return;
     const today = dayStart(now);
     if (BF.day == null) return bfSetDay(addDays(today, -1));
-    const end = BF.day >= addDays(today, -6) ? today : Math.min(addDays(BF.day, 3), today);
-    const busy = new Set(S.drinks.map(d => dayStart(d.consumed_at)));
-    $('#bfDays').innerHTML = Array.from({ length: 7 }, (_, i) => addDays(end, i - 6)).map(d => {
-        const dt = new Date(d);
-        return `<button class="day" type="button" data-bf-day="${d}" aria-pressed="${d === BF.day}" aria-label="${dt.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}">
-            <small>${dt.toLocaleDateString('de-DE', { weekday: 'short' }).replace('.', '')}</small><b>${dt.getDate()}</b>${busy.has(d) ? '<i></i>' : ''}</button>`;
-    }).join('');
     $('#bfDate').max = localInput(now).slice(0, 10);
     $('#bfDate').value = localInput(BF.day).slice(0, 10);
-    $('#bfDayLabel').textContent = new Date(BF.day).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' }) + ' · Startzeit';
+    const rel = BF.day === today ? 'Heute, ' : BF.day === addDays(today, -1) ? 'Gestern, ' : '';
+    $('#bfDayText').textContent = rel + new Date(BF.day).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    $('#bfDayLabel').textContent = 'Startzeit';
     const h = sameDay(BF.t, BF.day) ? new Date(BF.t).getHours() : -1;
     $('#bfHours').innerHTML = Array.from({ length: 24 }, (_, i) => i).map(i =>
         `<button class="wp-chip" type="button" data-bf-hour="${i}" aria-pressed="${i === h}"${atHour(BF.day, i) > now ? ' disabled' : ''}>${String(i).padStart(2, '0')}:00</button>`).join('');
@@ -1500,8 +1485,7 @@ async function bfAdd(d) {
     recompute(); render();
 }
 document.addEventListener('click', e => {
-    const b = e.target.closest('[data-bf-day],[data-bf-hour],[data-bf-step],[data-bf-quick],[data-bf-session]'); if (!b) return;
-    if (b.dataset.bfDay) return bfSetDay(+b.dataset.bfDay);
+    const b = e.target.closest('[data-bf-hour],[data-bf-step],[data-bf-quick],[data-bf-session]'); if (!b) return;
     if (b.dataset.bfHour) { BF.t = atHour(BF.day, +b.dataset.bfHour); $('#bfMsg').hidden = true; return renderBackfill(); }
     if (b.dataset.bfStep) { BF.t = Math.min(BF.t + +b.dataset.bfStep * MIN, roundDown5(Date.now())); return renderBackfill(); }
     if (b.dataset.bfQuick) { const d = QUICK[+b.dataset.bfQuick]; BF.pick = BF.pick === d ? null : d; return renderBackfill(); }
@@ -1515,6 +1499,8 @@ $('#bfAdd').onclick = () => bfAdd(BF.pick);
 $('#bfFood').addEventListener('change', () => renderBackfill());
 /* eingeklappt lässt sich die Stundenleiste nicht scrollen, daher beim Aufklappen nachholen */
 $('#bfCard').addEventListener('toggle', () => { if ($('#bfCard').open) { BF.scrolledFor = null; renderBackfill(); } });
+/* Desktop-Browser öffnen den Kalender sonst nur über das kleine Symbol */
+$('#bfDate').addEventListener('click', e => { try { e.target.showPicker(); } catch (err) {} });
 $('#bfDate').addEventListener('change', () => { if ($('#bfDate').value) bfSetDay(new Date($('#bfDate').value + 'T00:00')); });
 
 /* ═════════ Konto, Thema, Start ═════════ */
