@@ -202,7 +202,8 @@
         .chip[aria-pressed="true"] { background: var(--p1-soft); box-shadow: inset 0 0 0 1.5px var(--p1); }
         .inp { width: 100%; min-height: 40px; padding: 9px 12px; border: 0; border-radius: 10px; background: var(--well); color: var(--ink); font-size: 16px; }
         .inp:focus { outline: 2px solid var(--p1); outline-offset: 0; }
-        select.inp { -webkit-appearance: none; appearance: none; padding-right: 34px; cursor: pointer;
+        /* Auswahllisten kompakt; Schrift bleibt auf dem Handy 16 px, sonst zoomt iOS beim Antippen */
+        select.inp { min-height: 34px; padding-block: 5px; -webkit-appearance: none; appearance: none; padding-right: 34px; cursor: pointer;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
             background-repeat: no-repeat; background-position: right 12px center; background-size: 14px; }
         @media (min-width: 640px) { .inp { font-size: 14px; } }
@@ -674,7 +675,7 @@ const MODEL = {
     ethanolDensity: 0.789,                /* g/ml */
     cafKa: 4.0,                           /* Aufnahme 1/h */
     cafHalfLifeH: 5,
-    cafZero: 15,                          /* mg, darunter gilt Koffein als abgeklungen (Session-Ende) */
+    cafZero: 40,                          /* mg, darunter gilt Koffein als abgeklungen (Session-Ende); gleiche Grenze wie „gering“ */
     stepMin: 2
 };
 const MILESTONES = [0.8, 0.5, 0.3, 0.0];
@@ -689,38 +690,81 @@ const QUICK = [
     { name: 'Glas Wein', category: 'wine', volume_ml: 200, abv: 12.0 },
     { name: 'Glas Prosecco', category: 'sparkling', volume_ml: 100, abv: 11.0 }
 ];
+/* Werte sind übliche Richtwerte (Glasgröße, Vol.-%, Koffein in mg) */
 const STANDARD = [
-
+    { group: 'Koffein', items: [
+        { name: 'Espresso', category: 'caffeine', volume_ml: 30, abv: 0, caffeine_mg: 63 },
+        { name: 'Doppelter Espresso', category: 'caffeine', volume_ml: 60, abv: 0, caffeine_mg: 126 },
+        { name: 'Tasse Kaffee', category: 'caffeine', volume_ml: 200, abv: 0, caffeine_mg: 90 },
+        { name: 'Cappuccino', category: 'caffeine', volume_ml: 200, abv: 0, caffeine_mg: 63 },
+        { name: 'Latte Macchiato', category: 'caffeine', volume_ml: 300, abv: 0, caffeine_mg: 75 },
+        { name: 'Schwarzer Tee', category: 'caffeine', volume_ml: 250, abv: 0, caffeine_mg: 45 },
+        { name: 'Grüner Tee', category: 'caffeine', volume_ml: 250, abv: 0, caffeine_mg: 30 },
+        { name: 'Cola 0,33 l', category: 'caffeine', volume_ml: 330, abv: 0, caffeine_mg: 33 },
+        { name: 'Energy Drink 0,25 l', category: 'caffeine', volume_ml: 250, abv: 0, caffeine_mg: 80 },
+        { name: 'Mate 0,5 l', category: 'caffeine', volume_ml: 500, abv: 0, caffeine_mg: 100 }
+    ] },
+    { group: 'Bier', items: [
+        { name: 'Pils 0,33 l', category: 'beer', volume_ml: 330, abv: 4.8 },
+        { name: 'Helles 0,5 l', category: 'beer', volume_ml: 500, abv: 5.0 },
+        { name: 'Maß', category: 'beer', volume_ml: 1000, abv: 5.5 },
+        { name: 'Weißbier 0,5 l', category: 'beer', volume_ml: 500, abv: 5.4 },
+        { name: 'Alkoholfreies Weißbier 0,5 l', category: 'beer', volume_ml: 500, abv: 0.4 },
+        { name: 'Radler 0,5 l', category: 'beer', volume_ml: 500, abv: 2.5 },
+        { name: 'Radlermaß', category: 'beer', volume_ml: 1000, abv: 2.5 },
+        { name: 'Russ 0,5 l', category: 'beer', volume_ml: 500, abv: 2.7 },
+        { name: 'Colaweizen 0,5 l', category: 'beer', volume_ml: 500, abv: 2.7, caffeine_mg: 25 },
+        { name: 'Goaßhalbe 0,5 l', category: 'beer', volume_ml: 500, abv: 7.0, caffeine_mg: 25 },
+        { name: 'Goaßmaß', category: 'beer', volume_ml: 1000, abv: 7.0, caffeine_mg: 50 },
+        { name: 'Starkbier-Maß', category: 'beer', volume_ml: 1000, abv: 7.5 },
+        { name: 'Kölsch 0,2 l', category: 'beer', volume_ml: 200, abv: 4.8 },
+        { name: 'Stout 0,5 l', category: 'beer', volume_ml: 500, abv: 4.2 },
+        { name: 'Cider 0,5 l', category: 'beer', volume_ml: 500, abv: 4.5 },
+        { name: 'Snakebite 0,5 l', category: 'beer', volume_ml: 500, abv: 4.8 },
+        { name: 'Asiatisches Bier 0,33 l', category: 'beer', volume_ml: 330, abv: 5.0 },
+        { name: 'Asiatisches Bier 0,62 l', category: 'beer', volume_ml: 620, abv: 5.0 }
+    ] },
+    { group: 'Wein & Sekt', items: [
+        { name: 'Rotwein 0,2 l', category: 'wine', volume_ml: 200, abv: 13.0 },
+        { name: 'Weißwein 0,2 l', category: 'wine', volume_ml: 200, abv: 12.0 },
+        { name: 'Roséwein 0,2 l', category: 'wine', volume_ml: 200, abv: 11.5 },
+        { name: 'Wein 0,1 l', category: 'wine', volume_ml: 100, abv: 12.0 },
+        { name: 'Weinschorle 0,25 l', category: 'wine', volume_ml: 250, abv: 6.0 },
+        { name: 'Glühwein 0,2 l', category: 'wine', volume_ml: 200, abv: 10.0 },
+        { name: 'Tinto de Verano 0,25 l', category: 'wine', volume_ml: 250, abv: 6.0 },
+        { name: 'Sangria 0,25 l', category: 'wine', volume_ml: 250, abv: 7.0 },
+        { name: 'Sekt 0,1 l', category: 'sparkling', volume_ml: 100, abv: 11.0 },
+        { name: 'Champagner 0,1 l', category: 'sparkling', volume_ml: 100, abv: 12.0 }
+    ] },
     { group: 'Cocktails & Longdrinks', items: [
-        { name: 'Espresso Martini', category: 'cocktail', volume_ml: 120, abv: 16.5, caffeine_mg: 60 },
         { name: 'Aperol Spritz', category: 'cocktail', volume_ml: 200, abv: 8.0 },
+        { name: 'Limoncello Spritz', category: 'cocktail', volume_ml: 200, abv: 8.0 },
+        { name: 'Lillet Wild Berry', category: 'cocktail', volume_ml: 200, abv: 5.5 },
         { name: 'Hugo', category: 'cocktail', volume_ml: 200, abv: 6.0 },
         { name: 'Gin Tonic', category: 'cocktail', volume_ml: 200, abv: 7.5 },
         { name: 'Cuba Libre', category: 'cocktail', volume_ml: 200, abv: 8.0, caffeine_mg: 15 },
         { name: 'Wodka Energy', category: 'cocktail', volume_ml: 290, abv: 5.5, caffeine_mg: 80 },
+        { name: 'Longdrink', category: 'cocktail', volume_ml: 200, abv: 8.0 },
         { name: 'Mojito', category: 'cocktail', volume_ml: 200, abv: 9.0 },
-        { name: 'Long Island Iced Tea', category: 'cocktail', volume_ml: 250, abv: 16.0, caffeine_mg: 10 }
-        
+        { name: 'Espresso Martini', category: 'cocktail', volume_ml: 120, abv: 16.5, caffeine_mg: 60 },
+        { name: 'Pornstar Martini', category: 'cocktail', volume_ml: 150, abv: 13.0 },
+        { name: 'Long Island Iced Tea', category: 'cocktail', volume_ml: 250, abv: 16.0, caffeine_mg: 10 },
+        { name: 'Licor 43 mit Milch', category: 'cocktail', volume_ml: 200, abv: 6.0 }
     ] },
-    { group: 'Shots', items: [
+    { group: 'Shots & Spirituosen', items: [
         { name: 'Moorgeist', category: 'shot', volume_ml: 40, abv: 56 },
         { name: 'Shot Berliner Luft', category: 'shot', volume_ml: 20, abv: 18.0 },
+        { name: 'Shot Pfeffi', category: 'shot', volume_ml: 20, abv: 18.0 },
         { name: 'Shot Jägermeister', category: 'shot', volume_ml: 20, abv: 35.0 },
         { name: 'Shot Wodka', category: 'shot', volume_ml: 20, abv: 40.0 },
-        { name: 'Shot Tequila', category: 'shot', volume_ml: 20, abv: 38.0 }
-    ] },
-    { group: 'Bier & Wein', items: [
-        { name: 'Weizen 0,5 l', category: 'beer', volume_ml: 500, abv: 5.4 },
-        { name: 'Radler 0,5 l', category: 'beer', volume_ml: 500, abv: 2.5 },
-        { name: 'Wein 0,1 l', category: 'wine', volume_ml: 100, abv: 12.0 },
-        { name: 'Sekt 0,1 l', category: 'sparkling', volume_ml: 100, abv: 11.0 }
-    ] },
-    { group: 'Koffein', items: [
-        { name: 'Espresso', category: 'caffeine', volume_ml: 30, abv: 0, caffeine_mg: 63 },
-        { name: 'Tasse Kaffee', category: 'caffeine', volume_ml: 200, abv: 0, caffeine_mg: 90 },
-        { name: 'Cola 0,33 l', category: 'caffeine', volume_ml: 330, abv: 0, caffeine_mg: 33 },
-        { name: 'Energy Drink 0,25 l', category: 'caffeine', volume_ml: 250, abv: 0, caffeine_mg: 80 },
-        { name: 'Mate 0,5 l', category: 'caffeine', volume_ml: 500, abv: 0, caffeine_mg: 100 }
+        { name: 'Shot Tequila', category: 'shot', volume_ml: 20, abv: 38.0 },
+        { name: 'Schnaps 2 cl', category: 'shot', volume_ml: 20, abv: 40.0 },
+        { name: 'Marillenlikör 2 cl', category: 'shot', volume_ml: 20, abv: 30.0 },
+        { name: 'Ouzo 4 cl', category: 'spirit', volume_ml: 40, abv: 38.0 },
+        { name: 'Whiskey 4 cl', category: 'spirit', volume_ml: 40, abv: 40.0 },
+        { name: 'Rum 4 cl', category: 'spirit', volume_ml: 40, abv: 40.0 },
+        { name: 'Cognac 4 cl', category: 'spirit', volume_ml: 40, abv: 40.0 },
+        { name: 'Southern Comfort 4 cl', category: 'spirit', volume_ml: 40, abv: 35.0 }
     ] }
 ];
 /* Linien-Symbole aus dem SVG-Sprite oben im <body> */
