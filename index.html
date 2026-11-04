@@ -270,6 +270,52 @@
         .wp-cell:hover { background: var(--hover); }
         .wp-cell[aria-pressed="true"] { background: var(--p1-fill); color: var(--on-p1); font-weight: 600; }
 
+        /* Eintragen */
+        .narrow { max-width: 560px; margin: 0 auto; display: grid; gap: 14px; }
+        .now-mini { display: flex; align-items: center; gap: 16px; padding: 12px 16px; }
+        .now-mini b { display: block; font-size: 17px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+        .caf-mini { display: flex; align-items: center; gap: 6px; color: var(--caf); }
+        .caf-mini .ic { width: 18px; height: 18px; }
+        .caf-mini .pill { margin-left: 0; }
+        .now-mini .hint { margin-left: auto; text-align: right; }
+        .chip > span { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+        .chip small { font-size: 11px; font-weight: 500; color: var(--mute); }
+        .chip.caf { background: var(--caf-soft); min-height: 56px; }
+        .chip.caf .ic { color: var(--caf); }
+        .chip.caf:hover { background: color-mix(in srgb, var(--caf-soft) 80%, var(--caf)); }
+        .chip.caf[aria-pressed="true"] { box-shadow: inset 0 0 0 1.5px var(--caf); }
+
+        /* Nachtragen */
+        .bf { margin-bottom: 12px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; scroll-margin-top: 80px; }
+        .bf > * { margin-bottom: 0 !important; }
+        .bf .card-head .link { margin-left: auto; }
+        .bf-cal { position: relative; cursor: pointer; }
+        .bf-cal input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+        .day { position: relative; display: grid; justify-items: center; gap: 1px; padding: 7px 0 10px; border: 0; border-radius: 12px; background: var(--well); color: var(--ink); transition: background .15s; }
+        .day:hover { background: var(--hover); }
+        .day small { font-size: 11px; font-weight: 500; color: var(--mute); }
+        .day b { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+        .day i { position: absolute; bottom: 4px; width: 4px; height: 4px; border-radius: 50%; background: var(--p1); }
+        .day[aria-pressed="true"] { background: var(--p1-fill); color: var(--on-p1); }
+        .day[aria-pressed="true"] small { color: var(--on-p1); }
+        .day[aria-pressed="true"] i { background: var(--on-p1); }
+        .wp-chips.scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+        .wp-chips.scroll::-webkit-scrollbar { display: none; }
+        .wp-chip { flex: none; }
+        .wp-chip[aria-pressed="true"] { background: var(--p1-fill); color: var(--on-p1); font-weight: 600; }
+        .bf-next .wp-main { cursor: default; }
+        .bf-next .wp-main:hover { background: var(--well); }
+        .q3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .q3 .chip { flex-direction: column; justify-content: center; gap: 4px; min-height: 64px; padding: 8px 4px; text-align: center; font-size: 12px; }
+        .q3 .chip > span { align-items: center; }
+        .q3 .chip:disabled { opacity: .5; }
+        .hwrap { display: flex; flex-direction: column; }
+        .hwrap .hcard { flex: 1; border-radius: var(--radius) var(--radius) 0 0; padding-bottom: 8px; }
+        .hwrap .addto-row { background: var(--card); border-radius: 0 0 var(--radius) var(--radius); padding: 0 16px 14px; box-shadow: var(--shadow); }
+        .addto { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 6px 12px; border: 0; border-radius: 999px; background: var(--p1-soft); color: var(--p1); font-size: 13px; font-weight: 600; }
+        .addto .ic { width: 15px; height: 15px; }
+
         /* Historie */
         .hist { display: grid; gap: 12px; }
         @media (min-width: 640px) { .hist { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -328,6 +374,7 @@
     <symbol id="i-cocktail" viewBox="0 0 24 24"><path d="M4 4h16l-8 9z"/><path d="M12 13v8M8 21h8M7 7.5h10M16 4l2.5-2"/></symbol>
     <symbol id="i-shot" viewBox="0 0 24 24"><path d="M6 5h12l-1.4 13.2A2 2 0 0 1 14.6 20H9.4a2 2 0 0 1-2-1.8z"/><path d="M6.8 11h10.4"/></symbol>
     <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5v2.5M12 3.5v2.5"/></symbol>
+    <symbol id="i-espresso" viewBox="0 0 24 24"><path d="M6 9h9v3.5a4.5 4.5 0 0 1-9 0z"/><path d="M15 10h1a2 2 0 0 1 0 4h-1.3M4 19.5h14M9 4.5v2M12 4.5v2"/></symbol>
     <symbol id="i-glass" viewBox="0 0 24 24"><path d="M6 7h12l-1.5 12.2A2 2 0 0 1 14.5 21h-5a2 2 0 0 1-2-1.8z"/><path d="M13 7l2-4h3M6.7 12.5h10.6"/></symbol>
     <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M10 2.5h4M12 2.5V6"/></symbol>
     <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M4 16l5-6 4 3 7-8"/></symbol>
@@ -414,12 +461,73 @@
     <!-- ───────── App ───────── -->
     <main id="appView" hidden>
         <div class="seg tabs" role="tablist">
-            <button role="tab" data-tab="dash" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg>Dashboard</button>
+            <button role="tab" data-tab="add" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>Eintragen</button>
+            <button role="tab" data-tab="dash" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg>Dashboard</button>
             <button role="tab" data-tab="hist" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>Historie</button>
         </div>
 
+        <!-- Eintragen -->
+        <section id="addView" class="narrow">
+            <div class="card now-mini">
+                <div><span class="eyebrow">Gerade</span><b id="miniBac" class="num">0,00 ‰</b></div>
+                <div class="caf-mini"><svg class="ic" aria-hidden="true"><use href="#i-coffee"/></svg><b id="miniCaf" class="num">0 mg</b><span id="miniCafLevel" class="pill"></span></div>
+                <span id="miniToday" class="hint"></span>
+            </div>
+            <div id="entryCard" class="card">
+                <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></span><h3>Neuer Eintrag</h3></div>
+
+                <div class="group"><span class="eyebrow">Zeitpunkt</span>
+                    <input id="entryTime" type="hidden" data-when>
+                </div>
+
+                <div class="group"><span class="eyebrow">Koffein</span>
+                    <div id="quickCaf" class="quick"></div>
+                </div>
+
+                <div class="group"><span class="eyebrow">Alkohol</span>
+                    <div id="quickAlc" class="quick"></div>
+                </div>
+
+                <div class="group"><span class="eyebrow">Weitere Getränke</span>
+                    <select id="stdSel" class="inp" aria-label="Standard-Getränk wählen"></select>
+                </div>
+
+                <label class="toggle">
+                    <span class="t"><svg class="ic" aria-hidden="true"><use href="#i-food"/></svg>Gute Essensgrundlage</span>
+                    <span class="switch"><input id="foodToggle" type="checkbox"><span></span></span>
+                </label>
+
+                <button id="confirmAdd" class="btn-add" type="button" disabled>
+                    <span id="confirmMain">Erst Getränk auswählen</span>
+                    <span id="confirmSub" hidden></span>
+                </button>
+
+                <details class="manual">
+                    <summary><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg>Manuelle Eingabe<svg class="ic chev" aria-hidden="true"><use href="#i-right"/></svg></summary>
+                    <form id="manualForm">
+                        <label class="lbl full">Bezeichnung<input id="mName" class="inp" type="text" maxlength="80" placeholder="z. B. Hausmarke Gin Tonic" required></label>
+                        <label class="lbl">Menge (Liter)<input id="mVol" class="inp" type="number" min="0.01" max="5" step="0.01" placeholder="0,2" required></label>
+                        <label class="lbl">Alkohol (Vol.-%)<input id="mAbv" class="inp" type="number" min="0" max="100" step="0.1" placeholder="12" required></label>
+                        <label class="lbl">Koffein (mg)<input id="mCaf" class="inp" type="number" min="0" max="2000" step="1" value="0"></label>
+                        <label class="lbl">Kategorie
+                            <select id="mCat" class="inp">
+                                <option value="cocktail">Cocktail</option><option value="beer">Bier</option><option value="wine">Wein</option>
+                                <option value="sparkling">Sekt</option><option value="shot">Shot</option><option value="spirit">Spirituose</option>
+                                <option value="caffeine">Koffein</option><option value="other">Sonstiges</option>
+                            </select>
+                        </label>
+                        <label class="check full"><input id="mSave" type="checkbox"> Als eigenes Getränk im Dropdown merken</label>
+                        <button class="btn full" type="submit">Eintragen</button>
+                    </form>
+                </details>
+                <div id="entryMsg" class="msg" hidden></div>
+                <p class="foot">Schätzung nach Widmark/Watson. Nicht geeignet, um die Fahrtüchtigkeit zu beurteilen.</p>
+            </div>
+            <div id="readonlyCard" class="card ro" hidden><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg><span>Du siehst den Bereich von <b id="roName"></b>. Einträge kann nur die Person selbst machen.</span></div>
+        </section>
+
         <!-- Dashboard -->
-        <section id="dashView" class="cols">
+        <section id="dashView" hidden>
             <div class="col">
                 <!-- aktueller Stand -->
                 <div class="card">
@@ -471,61 +579,30 @@
                     <ul id="sessionList" class="drinks"></ul>
                 </div>
             </div>
-
-            <!-- Erfassung -->
-            <div class="col side">
-                <div id="entryCard" class="card">
-                    <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></span><h3>Neuer Eintrag</h3></div>
-
-                    <div class="group"><span class="eyebrow">Zeitpunkt</span>
-                        <input id="entryTime" type="hidden" data-when>
-                    </div>
-
-                    <div class="group"><span class="eyebrow">Schnellwahl</span>
-                        <div id="quickBtns" class="quick"></div>
-                    </div>
-
-                    <div class="group"><span class="eyebrow">Standard-Getränke &amp; Koffein</span>
-                        <select id="stdSel" class="inp" aria-label="Standard-Getränk wählen"></select>
-                    </div>
-
-                    <label class="toggle">
-                        <span class="t"><svg class="ic" aria-hidden="true"><use href="#i-food"/></svg>Gute Essensgrundlage</span>
-                        <span class="switch"><input id="foodToggle" type="checkbox"><span></span></span>
-                    </label>
-
-                    <button id="confirmAdd" class="btn-add" type="button" disabled>
-                        <span id="confirmMain">Erst Getränk auswählen</span>
-                        <span id="confirmSub" hidden></span>
-                    </button>
-
-                    <details class="manual">
-                        <summary><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg>Manuelle Eingabe<svg class="ic chev" aria-hidden="true"><use href="#i-right"/></svg></summary>
-                        <form id="manualForm">
-                            <label class="lbl full">Bezeichnung<input id="mName" class="inp" type="text" maxlength="80" placeholder="z. B. Hausmarke Gin Tonic" required></label>
-                            <label class="lbl">Menge (Liter)<input id="mVol" class="inp" type="number" min="0.01" max="5" step="0.01" placeholder="0,2" required></label>
-                            <label class="lbl">Alkohol (Vol.-%)<input id="mAbv" class="inp" type="number" min="0" max="100" step="0.1" placeholder="12" required></label>
-                            <label class="lbl">Koffein (mg)<input id="mCaf" class="inp" type="number" min="0" max="2000" step="1" value="0"></label>
-                            <label class="lbl">Kategorie
-                                <select id="mCat" class="inp">
-                                    <option value="cocktail">Cocktail</option><option value="beer">Bier</option><option value="wine">Wein</option>
-                                    <option value="sparkling">Sekt</option><option value="shot">Shot</option><option value="spirit">Spirituose</option>
-                                    <option value="caffeine">Koffein</option><option value="other">Sonstiges</option>
-                                </select>
-                            </label>
-                            <label class="check full"><input id="mSave" type="checkbox"> Als eigenes Getränk im Dropdown merken</label>
-                            <button class="btn full" type="submit">Eintragen</button>
-                        </form>
-                    </details>
-                    <div id="entryMsg" class="msg" hidden></div>
-                    <p class="foot">Schätzung nach Widmark/Watson. Nicht geeignet, um die Fahrtüchtigkeit zu beurteilen.</p>
-                </div>
-                <div id="readonlyCard" class="card ro" hidden><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg><span>Du siehst den Bereich von <b id="roName"></b>. Einträge kann nur die Person selbst machen.</span></div>
-            </div>
         </section>
 
         <!-- Historie -->
         <section id="histView" hidden>
+            <div id="bfCard" class="card bf">
+                <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg></span><h3>Nachtragen</h3>
+                    <label class="link bf-cal">Kalender<input id="bfDate" type="date" aria-label="Tag aus dem Kalender wählen"></label></div>
+                <div id="bfDays" class="days"></div>
+                <div class="group"><span id="bfDayLabel" class="eyebrow"></span>
+                    <div id="bfHours" class="wp-chips scroll"></div>
+                </div>
+                <div class="wp-row bf-next">
+                    <button type="button" class="wp-step" data-bf-step="-15" aria-label="15 Minuten früher">−15</button>
+                    <div class="wp-main"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg><span id="bfWhen"></span></div>
+                    <button type="button" class="wp-step" data-bf-step="15" aria-label="15 Minuten später">+15</button>
+                </div>
+                <div id="bfQuick" class="quick q3"></div>
+                <select id="bfSel" class="inp bf-sel" aria-label="Weiteres Getränk nachtragen"></select>
+                <label class="toggle"><span class="t"><svg class="ic" aria-hidden="true"><use href="#i-food"/></svg>Gute Essensgrundlage</span>
+                    <span class="switch"><input id="bfFood" type="checkbox"><span></span></span></label>
+                <p class="hint">Jedes Antippen trägt sofort ein. Das nächste Getränk rückt automatisch 30 min weiter.</p>
+                <ul id="bfList" class="drinks"></ul>
+                <div id="bfMsg" class="msg" hidden></div>
+            </div>
             <div id="histList" class="hist"></div>
             <p id="histEmpty" class="card empty" hidden>Noch keine abgeschlossenen Sessions.</p>
         </section>
@@ -598,7 +675,11 @@ const MODEL = {
 };
 const MILESTONES = [0.8, 0.5, 0.3, 0.0];
 
+/* Schnellwahl: die ersten QUICK_CAF Einträge stehen als Koffein-Knöpfe oben */
+const QUICK_CAF = 2;
 const QUICK = [
+    { name: 'Espresso', category: 'caffeine', volume_ml: 30, abv: 0, caffeine_mg: 63 },
+    { name: 'Tasse Kaffee', category: 'caffeine', volume_ml: 200, abv: 0, caffeine_mg: 90 },
     { name: 'Bier 0,33 l', category: 'beer', volume_ml: 330, abv: 5.0 },
     { name: 'Bier 0,5 l', category: 'beer', volume_ml: 500, abv: 5.0 },
     { name: 'Glas Wein', category: 'wine', volume_ml: 200, abv: 12.0 },
@@ -642,6 +723,7 @@ const STANDARD = [
 const ic = id => `<svg class="ic" aria-hidden="true"><use href="#i-${id}"/></svg>`;
 const CAT_ICON = { beer: 'beer', wine: 'wine', sparkling: 'sparkling', cocktail: 'cocktail', shot: 'shot', spirit: 'shot', caffeine: 'coffee', other: 'glass' };
 const catIc = c => ic(CAT_ICON[c] || 'glass');
+const drinkIc = d => d.category === 'caffeine' && /espresso/i.test(d.name) ? ic('espresso') : catIc(d.category);
 
 const H = 3600e3, MIN = 60e3;
 const grams = d => d.volume_ml * (d.abv / 100) * MODEL.ethanolDensity;
@@ -799,7 +881,7 @@ const cacheSet = (k, v) => { try { localStorage.setItem(CACHE + k, JSON.stringif
 const clearCache = () => { try { Object.keys(localStorage).filter(k => k.startsWith(CACHE)).forEach(k => localStorage.removeItem(k)); } catch (e) {} };
 const isNetErr = e => !navigator.onLine || /fetch|network|load failed|timeout/i.test(String(e && (e.message || e)));
 
-const S = { user: null, role: null, people: [], viewId: null, drinks: [], custom: [], sessions: [], body: null, tab: 'dash' };
+const S = { user: null, role: null, people: [], viewId: null, drinks: [], custom: [], sessions: [], body: null, tab: 'add' };
 const viewPerson = () => S.people.find(p => p.id === S.viewId) || null;
 const viewingSelf = () => S.user && S.viewId === S.user.id;
 let liveChart = null, detailChart = null;
@@ -845,23 +927,30 @@ async function loadDrinks() {
     }
 }
 
-async function addDrink(d) {
-    if (!viewingSelf()) return;
+/* Speichert ein Getränk zum Zeitpunkt at (ms). Fehler gehen an den Aufrufer. */
+async function insertDrink(d, at, withFood) {
     const row = {
         name: d.name, category: d.category || 'other', volume_ml: d.volume_ml, abv: d.abv || 0,
-        caffeine_mg: d.caffeine_mg || 0, with_food: $('#foodToggle').checked,
-        consumed_at: new Date($('#entryTime').value || Date.now()).toISOString()
+        caffeine_mg: d.caffeine_mg || 0, with_food: withFood, consumed_at: new Date(at).toISOString()
     };
     try {
         const saved = check(await sb.from('pegel_drinks').insert(row).select().single());
         S.drinks.push(saved);
         cacheSet('drinks_' + S.viewId, { drinks: S.drinks, custom: S.custom }); syncOk();
-        flash(`${row.name} eingetragen.`);
+        return saved;
+    } catch (e) { syncFail(e); throw e; }
+}
+
+async function addDrink(d) {
+    if (!viewingSelf()) return;
+    try {
+        await insertDrink(d, +new Date($('#entryTime').value || Date.now()), $('#foodToggle').checked);
+        flash(`${d.name} eingetragen.`);
         $('#entryTime').value = localInput(Date.now()); entryTimeTouched = false;
         clearPick();
         recompute(); render();
         return true;
-    } catch (e) { flash(errorText(e), false); syncFail(e); return false; }
+    } catch (e) { flash(errorText(e), false); return false; }
 }
 
 /* Zeitpunkt eines vorhandenen Getränks ändern (aktuelle Session und Historie) */
@@ -939,6 +1028,7 @@ function render() {
     const me = viewPerson();
     $('#subline').textContent = viewingSelf() ? 'Mein Bereich' : `Bereich von ${me ? me.display_name : '…'}`;
     $('#entryCard').hidden = !viewingSelf();
+    $('#bfCard').hidden = !viewingSelf();
     $('#readonlyCard').hidden = viewingSelf();
     $('#roName').textContent = me ? me.display_name : '';
     if (S.body && S.body.missing.length && viewingSelf())
@@ -967,6 +1057,11 @@ function render() {
     const [lvl, cls] = cafLevel(caf);
     $('#cafNow').textContent = nf(caf, 0);
     $('#cafLevel').textContent = lvl; $('#cafLevel').className = 'pill ' + cls;
+    $('#miniBac').textContent = `${nf(cur.bac)} ‰`;
+    $('#miniBac').style.color = s && s.hasAlc ? bacColor(cur.bac) : '';
+    $('#miniCaf').textContent = `${nf(caf, 0)} mg`;
+    $('#miniCafLevel').textContent = lvl; $('#miniCafLevel').className = 'pill ' + cls;
+    $('#miniToday').textContent = `Heute ${nf(today, 0)} mg`;
     $('#cafHint').textContent = `Heute insgesamt ${nf(today, 0)} mg (Richtwert max. 400 mg/Tag).` +
         (s && caf >= 40 && cur.bac > 0 ? ' Koffein macht wacher, senkt aber nicht den Promillewert.' : '');
 
@@ -990,6 +1085,7 @@ function render() {
 
     renderLiveChart(s, now);
     renderHistory(now);
+    renderBackfill(now);
 }
 
 function drinkRow(d) {
@@ -999,7 +1095,7 @@ function drinkRow(d) {
     if (d.with_food) meta.push(ic('food') + 'mit Essen');
     return `<li>
         <span class="time">${fmtTime(d.consumed_at)}</span>
-        <span class="badge-ic${d.abv > 0 ? '' : ' caf'}">${catIc(d.category)}</span>
+        <span class="badge-ic${d.abv > 0 ? '' : ' caf'}">${drinkIc(d)}</span>
         <span class="txt"><b>${esc(d.name)}</b><span>${meta.join(' · ')}</span></span>
         ${viewingSelf() ? `<button class="row-btn" type="button" data-edit="${d.id}" aria-label="Zeitpunkt ändern" title="Zeitpunkt ändern">${ic('clock')}</button>
         <button class="row-btn del" type="button" data-del="${d.id}" aria-label="Löschen" title="Löschen">${ic('trash')}</button>` : ''}
@@ -1068,16 +1164,16 @@ function renderHistory(now) {
     $('#histEmpty').hidden = done.length > 0;
     $('#histList').innerHTML = done.map(s => {
         const i = S.sessions.indexOf(s);
-        return `<button class="card hcard" type="button" data-session="${i}">
+        return `<div class="hwrap"><button class="card hcard" type="button" data-session="${i}">
             <div class="top">
                 <div><b>${fmtDay(s.start)}</b>
                 <div class="hint">${fmtTime(s.start)} bis ${fmtWhen(s.end, s.start)} · ${fmtDur(s.end - s.start)}</div></div>
                 ${s.hasAlc ? `<span class="peak" style="--c:${bacColor(s.peak)}">${nf(s.peak)} ‰</span>`
                     : `<span class="peak" style="--c:var(--caf)">${ic('coffee')}${nf(s.peakCaf, 0)} mg</span>`}
             </div>
-            <div class="icons">${s.drinks.map(d => catIc(d.category)).join('')}</div>
+            <div class="icons">${s.drinks.map(drinkIc).join('')}</div>
             <div class="meta">${s.drinks.length} Getränke${s.hasAlc ? ` · ${nf(s.grams, 0)} g Alkohol` : ''}${s.caffeine ? ` · ${nf(s.caffeine, 0)} mg Koffein, max. ${nf(s.peakCaf, 0)} mg aktiv` : ''}</div>
-        </button>`;
+        </button>${viewingSelf() ? `<div class="addto-row"><button class="addto" type="button" data-bf-session="${i}">${ic('plus')}Getränk nachtragen</button></div>` : ''}</div>`;
     }).join('');
 }
 
@@ -1197,10 +1293,15 @@ function paintPick() {
     $('#confirmSub').textContent = `${fmtWhen(t)} Uhr${$('#foodToggle').checked ? ' · mit Essensgrundlage' : ''}`;
 }
 function buildEntry() {
-    $('#quickBtns').innerHTML = QUICK.map((q, i) => `<button class="chip" type="button" data-quick="${i}" aria-pressed="false">${catIc(q.category)}<span>${esc(q.name)}</span></button>`).join('');
+    const chip = (q, i) => `<button class="chip${q.abv > 0 ? '' : ' caf'}" type="button" data-quick="${i}" aria-pressed="false">${drinkIc(q)}<span>${esc(q.name)}<small>${q.abv > 0 ? nf(q.abv, 1) + ' %' : nf(q.caffeine_mg, 0) + ' mg'}</small></span></button>`;
+    $('#quickCaf').innerHTML = QUICK.slice(0, QUICK_CAF).map(chip).join('');
+    $('#quickAlc').innerHTML = QUICK.slice(QUICK_CAF).map((q, i) => chip(q, i + QUICK_CAF)).join('');
     const opt = (d, v) => `<option value="${v}">${esc(d.name)} · ${d.abv > 0 ? nf(d.abv, 1) + ' %' : nf(d.caffeine_mg, 0) + ' mg'}</option>`;
-    $('#stdSel').innerHTML = '<option value="">Getränk auswählen …</option>' + STANDARD.map((g, gi) => `<optgroup label="${esc(g.group)}">${g.items.map((d, i) => opt(d, `s${gi}_${i}`)).join('')}</optgroup>`).join('')
+    const opts = STANDARD.map((g, gi) => `<optgroup label="${esc(g.group)}">${g.items.map((d, i) => opt(d, `s${gi}_${i}`)).join('')}</optgroup>`).join('')
         + (S.custom.length ? `<optgroup label="Eigene">${S.custom.map(d => opt(d, 'c' + d.id)).join('')}</optgroup>` : '');
+    $('#stdSel').innerHTML = '<option value="">Getränk auswählen …</option>' + opts;
+    $('#bfQuick').innerHTML = QUICK.map((q, i) => `<button class="chip${q.abv > 0 ? '' : ' caf'}" type="button" data-bf-quick="${i}">${drinkIc(q)}<span>${esc(q.name)}</span></button>`).join('');
+    $('#bfSel').innerHTML = '<option value="">Weiteres Getränk nachtragen …</option>' + opts;
     clearPick();
 }
 function stdDrink(v) {
@@ -1222,7 +1323,9 @@ document.addEventListener('click', e => {
     const tab = e.target.closest('[data-tab]'); if (tab) {
         S.tab = tab.dataset.tab;
         document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b === tab));
-        $('#dashView').hidden = S.tab !== 'dash'; $('#histView').hidden = S.tab !== 'hist';
+        $('#addView').hidden = S.tab !== 'add'; $('#dashView').hidden = S.tab !== 'dash'; $('#histView').hidden = S.tab !== 'hist';
+        /* Chart.js misst versteckte Canvas mit 0 px, deshalb nach dem Umschalten neu zeichnen */
+        if (S.tab === 'dash' && S.body) render();
     }
 });
 $('#stdSel').onchange = () => setPick(stdDrink($('#stdSel').value));
@@ -1255,6 +1358,89 @@ $('#manualForm').onsubmit = async e => {
     await addDrink(d);
     e.target.reset();
 };
+
+/* ═════════ Nachtragen (Historie) ═════════
+   Tag einmal wählen, danach trägt jedes Antippen sofort ein. Der Zeitpunkt rückt danach um BF_GAP weiter. */
+const BF_GAP = 30 * MIN;
+const BF = { day: null, t: null, busy: false, scrolledFor: null };
+const dayStart = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return +d; };
+const addDays = (t, n) => { const d = new Date(t); d.setDate(d.getDate() + n); return dayStart(d); };
+const atHour = (day, h) => { const d = new Date(day); d.setHours(h, 0, 0, 0); return +d; };
+const roundDown5 = t => Math.floor(t / (5 * MIN)) * 5 * MIN;
+const bfDrinks = () => {
+    const to = Math.max(addDays(BF.day, 1), BF.t);
+    return S.drinks.filter(d => { const t = +new Date(d.consumed_at); return t >= BF.day && t < to; })
+        .sort((a, b) => new Date(a.consumed_at) - new Date(b.consumed_at));
+};
+/* Startzeit für einen Tag: nach dem letzten Getränk, sonst 20 Uhr; nie in der Zukunft */
+function bfSetDay(day, t) {
+    BF.day = dayStart(day);
+    const list = bfDrinks();
+    BF.t = Math.min(t ?? (list.length ? +new Date(list[list.length - 1].consumed_at) + BF_GAP : atHour(BF.day, 20)), roundDown5(Date.now()));
+    $('#bfMsg').hidden = true;
+    renderBackfill();
+}
+function bfMsg(text, ok = true) {
+    const m = $('#bfMsg'); m.hidden = false; m.textContent = text; m.className = 'msg' + (ok ? ' ok' : '');
+}
+function renderBackfill(now = Date.now()) {
+    if (!viewingSelf()) return;
+    const today = dayStart(now);
+    if (BF.day == null) return bfSetDay(addDays(today, -1));
+    const end = BF.day >= addDays(today, -6) ? today : Math.min(addDays(BF.day, 3), today);
+    const busy = new Set(S.drinks.map(d => dayStart(d.consumed_at)));
+    $('#bfDays').innerHTML = Array.from({ length: 7 }, (_, i) => addDays(end, i - 6)).map(d => {
+        const dt = new Date(d);
+        return `<button class="day" type="button" data-bf-day="${d}" aria-pressed="${d === BF.day}" aria-label="${dt.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}">
+            <small>${dt.toLocaleDateString('de-DE', { weekday: 'short' }).replace('.', '')}</small><b>${dt.getDate()}</b>${busy.has(d) ? '<i></i>' : ''}</button>`;
+    }).join('');
+    $('#bfDate').max = localInput(now).slice(0, 10);
+    $('#bfDate').value = localInput(BF.day).slice(0, 10);
+    $('#bfDayLabel').textContent = new Date(BF.day).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' }) + ' · Startzeit';
+    const h = sameDay(BF.t, BF.day) ? new Date(BF.t).getHours() : -1;
+    $('#bfHours').innerHTML = Array.from({ length: 24 }, (_, i) => i).map(i =>
+        `<button class="wp-chip" type="button" data-bf-hour="${i}" aria-pressed="${i === h}"${atHour(BF.day, i) > now ? ' disabled' : ''}>${String(i).padStart(2, '0')}:00</button>`).join('');
+    /* gewählte Stunde sichtbar machen, aber nicht bei jedem Minuten-Update neu scrollen */
+    const key = BF.day + ':' + h;
+    if (BF.scrolledFor !== key) {
+        BF.scrolledFor = key;
+        const row = $('#bfHours'), sel = row.querySelector('[aria-pressed="true"]');
+        if (sel) row.scrollLeft = sel.offsetLeft - row.offsetLeft - 60;
+    }
+    const future = BF.t > now;
+    $('#bfWhen').textContent = `Nächstes Getränk: ${fmtDayShort(BF.t)}, ${fmtTime(BF.t)} Uhr`;
+    $('[data-bf-step="15"]').disabled = BF.t + 15 * MIN > now;
+    document.querySelectorAll('[data-bf-quick]').forEach(b => { b.disabled = BF.busy || future; });
+    $('#bfSel').disabled = BF.busy || future;
+    const list = bfDrinks();
+    $('#bfList').innerHTML = list.length ? list.map(drinkRow).join('')
+        : '<li><span class="none">An diesem Tag ist noch nichts eingetragen.</span></li>';
+}
+async function bfAdd(d) {
+    if (!d || BF.busy || !viewingSelf()) return;
+    if (BF.t > Date.now()) return bfMsg('Der Zeitpunkt liegt in der Zukunft.', false);
+    BF.busy = true; renderBackfill();
+    const at = BF.t;
+    try {
+        await insertDrink(d, at, $('#bfFood').checked);
+        BF.t = at + BF_GAP;
+        bfMsg(`${d.name} am ${fmtDayShort(at)} um ${fmtTime(at)} Uhr eingetragen.`);
+    } catch (e) { bfMsg(errorText(e), false); }
+    BF.busy = false;
+    recompute(); render();
+}
+document.addEventListener('click', e => {
+    const b = e.target.closest('[data-bf-day],[data-bf-hour],[data-bf-step],[data-bf-quick],[data-bf-session]'); if (!b) return;
+    if (b.dataset.bfDay) return bfSetDay(+b.dataset.bfDay);
+    if (b.dataset.bfHour) { BF.t = atHour(BF.day, +b.dataset.bfHour); $('#bfMsg').hidden = true; return renderBackfill(); }
+    if (b.dataset.bfStep) { BF.t = Math.min(BF.t + +b.dataset.bfStep * MIN, roundDown5(Date.now())); return renderBackfill(); }
+    if (b.dataset.bfQuick) return bfAdd(QUICK[+b.dataset.bfQuick]);
+    const s = S.sessions[+b.dataset.bfSession]; if (!s) return;
+    bfSetDay(s.start, +new Date(s.drinks[s.drinks.length - 1].consumed_at) + BF_GAP);
+    $('#bfCard').scrollIntoView({ block: 'start' });
+});
+$('#bfSel').onchange = async () => { const d = stdDrink($('#bfSel').value); $('#bfSel').value = ''; await bfAdd(d); };
+$('#bfDate').addEventListener('change', () => { if ($('#bfDate').value) bfSetDay(new Date($('#bfDate').value + 'T00:00')); });
 
 /* ═════════ Konto, Thema, Start ═════════ */
 function applyTheme(dark, save) {
