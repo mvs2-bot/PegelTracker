@@ -276,7 +276,14 @@
 
         /* Eintragen */
         .narrow { max-width: 560px; margin: 0 auto; display: grid; gap: 14px; }
-        .now-mini { display: flex; align-items: center; gap: 16px; padding: 12px 16px; }
+        .now-mini { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 16px; }
+        .mini-drinks { flex-basis: 100%; display: flex; align-items: center; gap: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+        .mini-drinks .icons { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; min-width: 0; color: var(--ink); }
+        .mini-drinks .icons .ic { width: 20px; height: 20px; }
+        .mini-drinks .icons .ic.caf { color: var(--caf); }
+        .mini-drinks .icons .ic.pop { animation: pop .45s ease-out; }
+        @keyframes pop { 0% { transform: scale(.3); opacity: 0; } 60% { transform: scale(1.25); opacity: 1; } 100% { transform: scale(1); } }
+        @media (prefers-reduced-motion: reduce) { .mini-drinks .icons .ic.pop { animation: none; } }
         .now-mini b { display: block; font-size: 17px; font-weight: 600; color: var(--ink); white-space: nowrap; }
         .caf-mini { display: flex; align-items: center; gap: 6px; color: var(--caf); }
         .caf-mini .ic { width: 18px; height: 18px; }
@@ -475,6 +482,7 @@
                 <div><span class="eyebrow">Gerade</span><b id="miniBac" class="num">0,00 ‰</b></div>
                 <div class="caf-mini"><svg class="ic" aria-hidden="true"><use href="#i-coffee"/></svg><b id="miniCaf" class="num">0 mg</b><span id="miniCafLevel" class="pill"></span></div>
                 <span id="miniToday" class="hint"></span>
+                <div class="mini-drinks"><div id="miniDrinks" class="icons"></div><span id="miniCount" class="hint"></span></div>
             </div>
             <div id="entryCard" class="card">
                 <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></span><h3>Neuer Eintrag</h3></div>
@@ -1114,6 +1122,7 @@ function render() {
     $('#miniCaf').textContent = `${nf(caf, 0)} mg`;
     $('#miniCafLevel').textContent = lvl; $('#miniCafLevel').className = 'pill ' + cls;
     $('#miniToday').textContent = `Heute ${nf(today, 0)} mg`;
+    renderMiniDrinks(s);
     $('#cafHint').textContent = `Heute insgesamt ${nf(today, 0)} mg (Richtwert max. 400 mg/Tag).` +
         (s && caf >= 40 && cur.bac > 0 ? ' Koffein macht wacher, senkt aber nicht den Promillewert.' : '');
 
@@ -1138,6 +1147,20 @@ function render() {
     renderLiveChart(s, now);
     renderHistory(now);
     renderBackfill(now);
+}
+
+/* Mini-Ansicht: ein Symbol je Getränk der laufenden Session, neues Getränk ploppt kurz auf */
+function renderMiniDrinks(s) {
+    const list = s ? s.drinks : [];
+    const ids = new Set(list.map(d => String(d.id)));
+    const fresh = S.miniSeen ? list.filter(d => !S.miniSeen.has(String(d.id))).length : 0;
+    $('#miniDrinks').innerHTML = list.length ? list.map(d => {
+        const isNew = fresh > 0 && fresh <= 2 && !S.miniSeen.has(String(d.id));
+        return drinkIc(d).replace('class="ic"', `class="ic${d.abv > 0 ? '' : ' caf'}${isNew ? ' pop' : ''}"`)
+            .replace('aria-hidden="true">', `aria-hidden="true"><title>${esc(d.name)} · ${fmtTime(d.consumed_at)}</title>`);
+    }).join('') : '<span class="hint">Noch keine Getränke in dieser Session.</span>';
+    $('#miniCount').textContent = list.length ? `${list.length} ${list.length === 1 ? 'Getränk' : 'Getränke'}` : '';
+    S.miniSeen = ids;
 }
 
 function drinkRow(d) {
