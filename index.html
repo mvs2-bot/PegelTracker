@@ -278,8 +278,19 @@
         .wp-time { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; color: var(--ink); }
         .wp-time > .ic { width: 18px; height: 18px; color: var(--p1); }
         .wp-time b { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
-        .wp-quick { display: flex; gap: 6px; margin-left: auto; }
-        .wp-quick .wp-chip { background: var(--card); }
+        .wp-quick { display: flex; flex-wrap: wrap; gap: 6px; }
+        .wp-quick[hidden] { display: none; }
+        /* Drehräder: 5 sichtbare Zeilen à 36 px, die mittlere ist gewählt */
+        .wp-wheels { position: relative; display: flex; justify-content: center; align-items: center; gap: 4px; height: 180px; border-radius: var(--radius-s); background: var(--well); overflow: hidden; }
+        .wp-wheels::before { content: ""; position: absolute; left: 10px; right: 10px; top: 72px; height: 36px; border-radius: 10px; background: color-mix(in srgb, var(--p1-fill) 30%, transparent); pointer-events: none; }
+        .wp-wheel { position: relative; width: 76px; height: 180px; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; padding: 72px 0; overscroll-behavior: contain; outline: none;
+            -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); }
+        .wp-wheel::-webkit-scrollbar { display: none; }
+        .wp-wheel:focus-visible { box-shadow: inset 0 0 0 1.5px var(--p1); border-radius: 10px; }
+        .wp-wheel > div { height: 36px; line-height: 36px; text-align: center; scroll-snap-align: center; font-size: 20px; color: var(--ink); font-variant-numeric: tabular-nums; cursor: pointer; user-select: none; -webkit-user-select: none; }
+        .wp-wheel > div.on { font-weight: 600; font-size: 22px; }
+        .wp-wheel > div.off { opacity: .3; }
+        .wp-colon { position: relative; font-size: 22px; font-weight: 600; color: var(--ink); }
         .wp-hours { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; scroll-behavior: smooth; }
         .wp-hours::-webkit-scrollbar { display: none; }
         .wp-hours .wp-cell { flex: 0 0 44px; }
@@ -1000,7 +1011,9 @@ const cacheSet = (k, v) => { try { localStorage.setItem(CACHE + k, JSON.stringif
 const clearCache = () => { try { Object.keys(localStorage).filter(k => k.startsWith(CACHE)).forEach(k => localStorage.removeItem(k)); } catch (e) {} };
 const isNetErr = e => !navigator.onLine || /fetch|network|load failed|timeout/i.test(String(e && (e.message || e)));
 
-const S = { user: null, role: null, people: [], viewId: null, drinks: [], custom: [], sessions: [], body: null, tab: 'add' };
+const S = { user: null, role: null, people: [], viewId: null, drinks: [], custom: [], sessions: [], body: null, tab: 'dash' };
+/* Startseite ist das Dashboard; beim Neuladen bleibt die zuletzt offene Seite (gilt nur für diesen Tab/diese Sitzung) */
+try { const t = sessionStorage.getItem('pt-tab'); if (['add', 'bf', 'dash', 'hist', 'profile'].includes(t)) S.tab = t; } catch (e) {}
 const viewPerson = () => S.people.find(p => p.id === S.viewId) || null;
 const viewingSelf = () => S.user && S.viewId === S.user.id;
 let liveChart = null, detailChart = null;
@@ -1081,8 +1094,8 @@ function openTimeEdit(id) {
     $('#tName').textContent = `${d.name} · bisher ${fmtDayShort(d.consumed_at)} ${fmtTime(d.consumed_at)}`;
     $('#tTime').value = localInput(+new Date(d.consumed_at));
     $('#tMsg').hidden = true;
-    $('#tTime').wpClose();
     $('#timeDlg').showModal();
+    $('#tTime').wpRepaint();   /* Räder lassen sich erst drehen, wenn der Dialog sichtbar ist */
 }
 async function saveTimeEdit() {
     const d = S.drinks.find(x => x.id === editId);
@@ -1331,9 +1344,11 @@ function openDetail(i) {
 function mountWhen(inp) {
     const pad = n => String(n).padStart(2, '0');
     const dayKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const ROW = 36;   /* Zeilenhöhe der Drehräder, muss zu .wp-wheel div passen */
     const box = document.createElement('div');
     box.className = 'wp';
-    /* Tag: ‹ Datum ›  ·  Uhrzeit: Stunde und Minute je mit einem Tipp, ohne aufklappen */
+    /* Tag: ‹ Datum ›  ·  Uhrzeit: zwei Drehräder wie beim iPhone-Wecker, darüber Schnellwahl für heute */
+    const wheel = (k, n, label) => `<div class="wp-wheel" data-wheel="${k}" tabindex="0" role="spinbutton" aria-label="${label}" aria-valuemin="0" aria-valuemax="${n - 1}">${Array.from({ length: n }, (_, i) => `<div data-i="${i}">${pad(i)}</div>`).join('')}</div>`;
     box.innerHTML = `
         <div class="wp-row">
             <button type="button" class="wp-step" data-wp="dprev" aria-label="Einen Tag zurück">${ic('left')}</button>
@@ -1341,49 +1356,69 @@ function mountWhen(inp) {
                 <input type="date" class="wp-date" aria-label="Datum wählen"></label>
             <button type="button" class="wp-step" data-wp="dnext" aria-label="Einen Tag vor">${ic('right')}</button>
         </div>
-        <div class="wp-panel">
-            <div class="wp-time">${ic('clock')}<b data-wp-time></b>
-                <span class="wp-quick"><button type="button" class="wp-chip" data-wp="now">Jetzt</button><button type="button" class="wp-chip" data-wp="ago30">vor 30 min</button><button type="button" class="wp-chip" data-wp="ago60">vor 1 h</button></span>
-            </div>
-            <span class="eyebrow">Stunde</span>
-            <div class="wp-hours" data-wp-hours>${Array.from({ length: 24 }, (_, h) => `<button type="button" class="wp-cell" data-h="${h}">${pad(h)}</button>`).join('')}</div>
-            <span class="eyebrow">Minute</span>
-            <div class="wp-grid" data-wp-mins>${Array.from({ length: 12 }, (_, i) => `<button type="button" class="wp-cell" data-m="${i * 5}">:${pad(i * 5)}</button>`).join('')}</div>
-        </div>`;
+        <div class="wp-quick"><button type="button" class="wp-chip" data-wp="now">Jetzt</button><button type="button" class="wp-chip" data-wp="ago30">vor 30 min</button><button type="button" class="wp-chip" data-wp="ago60">vor 1 h</button></div>
+        <div class="wp-wheels">${wheel('h', 24, 'Stunde')}<span class="wp-colon">:</span>${wheel('m', 60, 'Minute')}</div>`;
     inp.after(box);
-    const q = s => box.querySelector(s), dateInp = q('.wp-date'), hours = q('[data-wp-hours]');
+    const q = s => box.querySelector(s), dateInp = q('.wp-date');
+    const wh = q('[data-wheel="h"]'), wm = q('[data-wheel="m"]');
     const desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
     const cur = () => { const v = desc.get.call(inp); const d = v ? new Date(v) : new Date(); return isNaN(d) ? new Date() : d; };
-    let scrolledFor = '';
+    const idx = w => Math.max(0, Math.min(w.children.length - 1, Math.round(w.scrollTop / ROW)));
+    /* Eintrag in der Mitte hervorheben (auch während des Drehens) */
+    const mark = w => { const i = idx(w); [...w.children].forEach((c, j) => c.classList.toggle('on', j === i)); };
+    /* Rad auf den Wert drehen; nicht, solange der Nutzer es gerade selbst dreht */
+    const setWheel = (w, i) => {
+        w.setAttribute('aria-valuenow', i); w.setAttribute('aria-valuetext', pad(i));
+        if (!w.clientHeight || w._t || idx(w) === i && Math.abs(w.scrollTop - i * ROW) < 1) return mark(w);
+        w.scrollTop = i * ROW; mark(w);
+    };
     const paint = () => {
         const d = cur(), today = new Date(), yest = new Date(Date.now() - 864e5), isToday = dayKey(d) === dayKey(today);
         const rel = isToday ? 'Heute, ' : dayKey(d) === dayKey(yest) ? 'Gestern, ' : '';
         q('[data-wp-date]').textContent = rel + d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: rel ? undefined : 'numeric' });
-        q('[data-wp-time]').textContent = `${pad(d.getHours())}:${pad(d.getMinutes())} Uhr`;
         dateInp.value = dayKey(d); dateInp.max = dayKey(today);
         q('[data-wp="dnext"]').disabled = dayKey(d) >= dayKey(today);
         q('.wp-quick').hidden = !isToday;   /* „Jetzt / vor 30 min“ ergibt nur für heute Sinn */
-        box.querySelectorAll('[data-h]').forEach(b => {
-            b.setAttribute('aria-pressed', String(+b.dataset.h === d.getHours()));
-            b.disabled = isToday && +b.dataset.h > today.getHours();
-        });
-        box.querySelectorAll('[data-m]').forEach(b => {
-            b.setAttribute('aria-pressed', String(+b.dataset.m === d.getMinutes()));
-            b.disabled = isToday && d.getHours() === today.getHours() && +b.dataset.m > today.getMinutes();
-        });
-        /* gewählte Stunde in die Mitte scrollen, aber nicht bei jedem Minuten-Update */
-        const key = dayKey(d) + d.getHours();
-        if (key !== scrolledFor && hours.offsetWidth) {
-            scrolledFor = key;
-            const sel = hours.querySelector('[aria-pressed="true"]');
-            if (sel) hours.scrollLeft = sel.offsetLeft - hours.offsetLeft - (hours.clientWidth - sel.offsetWidth) / 2;
-        }
+        /* Zukunft ausgegraut; wer trotzdem hindreht, landet bei „jetzt“ */
+        [...wh.children].forEach((c, h) => c.classList.toggle('off', isToday && h > today.getHours()));
+        [...wm.children].forEach((c, m) => c.classList.toggle('off', isToday && d.getHours() === today.getHours() && m > today.getMinutes()));
+        setWheel(wh, d.getHours()); setWheel(wm, d.getMinutes());
     };
     /* Programmatisch gesetzte Werte (z. B. „jede Minute auf jetzt“) aktualisieren die Anzeige mit */
     Object.defineProperty(inp, 'value', { configurable: true, get() { return desc.get.call(inp); }, set(v) { desc.set.call(inp, v); paint(); } });
     const commit = d => { if (+d > Date.now()) d = new Date(); inp.value = localInput(+d); inp.dispatchEvent(new Event('input', { bubbles: true })); };
-    inp.wpClose = () => {};
-    inp.wpRepaint = () => { scrolledFor = ''; paint(); };
+    /* Nach dem Ausrollen übernehmen; gleicher Wert löst nichts aus */
+    const settle = w => {
+        w._t = null; w._target = null;
+        const i = idx(w), d = cur();
+        if (w === wh) { if (i === d.getHours()) return paint(); d.setHours(i); }
+        else { if (i === d.getMinutes()) return paint(); d.setMinutes(i); }
+        commit(d);
+    };
+    for (const w of [wh, wm]) {
+        w.addEventListener('scroll', () => { mark(w); clearTimeout(w._t); w._t = setTimeout(() => settle(w), 150); }, { passive: true });
+        /* Antippen einer Zahl dreht das Rad dorthin */
+        w.addEventListener('click', e => { const c = e.target.closest('[data-i]'); if (c) w.scrollTo({ top: +c.dataset.i * ROW, behavior: 'smooth' }); });
+        /* Mausrad/Trackpad: eine Raste = ein Schritt, statt je nach Gerät mehrere Zeilen */
+        let acc = 0;
+        w.addEventListener('wheel', e => {
+            e.preventDefault();
+            acc += e.deltaMode ? e.deltaY * 40 : e.deltaY;
+            if (Math.abs(acc) < 30) return;
+            w._target = Math.max(0, Math.min(w.children.length - 1, (w._target ?? idx(w)) + Math.sign(acc)));
+            acc = 0;
+            w.scrollTo({ top: w._target * ROW, behavior: 'smooth' });
+        }, { passive: false });
+        /* Tastatur: Pfeil hoch/runter */
+        w.addEventListener('keydown', e => {
+            if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+            e.preventDefault();
+            const d = cur(), s = e.key === 'ArrowUp' ? -1 : 1;
+            if (w === wh) d.setHours(d.getHours() + s); else d.setMinutes(d.getMinutes() + s);
+            commit(d);
+        });
+    }
+    inp.wpRepaint = () => { wh._t = wm._t = null; paint(); };
     dateInp.addEventListener('change', () => {
         if (!dateInp.value) return;
         const [y, m, dd] = dateInp.value.split('-').map(Number), d = cur();
@@ -1398,8 +1433,6 @@ function mountWhen(inp) {
         else if (a === 'dnext') d.setDate(d.getDate() + 1);
         else if (a === 'now') return commit(new Date());
         else if (a && a.startsWith('ago')) return commit(new Date(Date.now() - +a.slice(3) * 60e3));
-        else if (b.dataset.h != null) d.setHours(+b.dataset.h);
-        else if (b.dataset.m != null) d.setMinutes(+b.dataset.m);
         else return;
         commit(d);
     });
@@ -1595,6 +1628,7 @@ function setTab(t) {
     if (t === 'profile' && !mobileMq.matches) t = 'dash';
     const changed = S.tab !== t;
     S.tab = t;
+    try { sessionStorage.setItem('pt-tab', t); } catch (e) {}
     for (const [k, id] of Object.entries(VIEWS)) $('#' + id).hidden = k !== t;
     document.querySelectorAll('.tabs [data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
     document.querySelectorAll('.tabbar [data-tab]').forEach(b => { if (b.dataset.tab === t) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
@@ -1732,6 +1766,7 @@ async function start(session) {
     buildEntry();
     $('#entryTime').value = localInput(Date.now());
     recompute(); render();
+    if (S.tab === 'bf') renderBackfill();   /* nach Neuladen auf „Nachtragen“ */
 }
 
 /* Live: jede Minute neu berechnen (Pegel, Meilensteine, Chart) */
