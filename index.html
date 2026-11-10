@@ -405,6 +405,10 @@
 
         /* Anmeldung, kein Zugang */
         .gate { max-width: 380px; margin: 8vh auto 0; }
+        .load-gate { text-align: center; }
+        .load-gate .lead { margin: 14px 0 16px; }
+        .spinner { width: 28px; height: 28px; margin: 0 auto; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--p1-fill); animation: spin .8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .gate h2 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 4px; }
         .gate .lead { margin-bottom: 16px; font-size: 13px; color: var(--mute); }
         .gate form { display: grid; gap: 12px; }
@@ -545,6 +549,13 @@
 <div class="wrap">
 
     <div id="banner" class="banner" hidden></div>
+
+    <!-- ───────── Start: sichtbar, bis Anmeldung oder App bereit ist ───────── -->
+    <section id="loadView" class="gate load-gate" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <p id="loadMsg" class="lead">PegelTracker wird geladen …</p>
+        <button id="loadRetry" class="btn" type="button" hidden>Neu laden</button>
+    </section>
 
     <!-- ───────── Anmeldung ───────── -->
     <section id="loginView" class="gate" hidden>
@@ -1091,6 +1102,8 @@ const CACHE = 'pt_cache_v1_';
 const cacheGet = k => { try { return JSON.parse(localStorage.getItem(CACHE + k)); } catch (e) { return null; } };
 const cacheSet = (k, v) => { try { localStorage.setItem(CACHE + k, JSON.stringify(v)); } catch (e) {} };
 const clearCache = () => { try { Object.keys(localStorage).filter(k => k.startsWith(CACHE)).forEach(k => localStorage.removeItem(k)); } catch (e) {} };
+/* Netzanfragen nicht ewig warten lassen (z. B. schlechtes Netz oder App aus dem Hintergrund) */
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, j) => setTimeout(() => j(new Error('timeout')), ms))]);
 const isNetErr = e => !navigator.onLine || /fetch|network|load failed|timeout/i.test(String(e && (e.message || e)));
 
 const S = { user: null, role: null, people: [], viewId: null, drinks: [], custom: [], sessions: [], body: null, tab: 'add' };
@@ -1099,7 +1112,8 @@ try { const t = sessionStorage.getItem('pt-tab'); if (['add', 'bf', 'dash', 'his
 const viewPerson = () => S.people.find(p => p.id === S.viewId) || null;
 const viewingSelf = () => S.user && S.viewId === S.user.id;
 let liveChart = null, detailChart = null;
-Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif';
+/* Ohne Diagramm-Bibliothek (CDN nicht erreichbar) läuft die App trotzdem, nur ohne Kurven */
+if (window.Chart) Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif';
 
 function errorText(e) {
     const m = String(e && (e.message || e));
@@ -1129,8 +1143,8 @@ async function loadDrinks() {
     const key = 'drinks_' + S.viewId;
     try {
         const since = new Date(Date.now() - 730 * 24 * H).toISOString();
-        S.drinks = check(await sb.from('pegel_drinks').select('*').eq('user_id', S.viewId).gte('consumed_at', since).order('consumed_at'));
-        if (viewingSelf()) S.custom = check(await sb.from('pegel_custom_drinks').select('*').order('name'));
+        S.drinks = check(await withTimeout(sb.from('pegel_drinks').select('*').eq('user_id', S.viewId).gte('consumed_at', since).order('consumed_at'), 12000));
+        if (viewingSelf()) S.custom = check(await withTimeout(sb.from('pegel_custom_drinks').select('*').order('name'), 12000));
         cacheSet(key, { drinks: S.drinks, custom: S.custom });
         banner(null); syncOk();
     } catch (e) {
@@ -1387,7 +1401,7 @@ function renderLiveChart(s, now) {
     $('#chartEmpty').hidden = !!s;
     $('#liveChart').parentElement.hidden = !s;
     if (liveChart) { liveChart.destroy(); liveChart = null; }
-    if (!s) return;
+    if (!s || !window.Chart) return;
     liveChart = new Chart($('#liveChart'), chartConfig(s.curve, now, s.hasAlc));
 }
 
@@ -1417,8 +1431,8 @@ function openDetail(i) {
         + (s.caffeine ? ` · max. ${nf(s.peakCaf, 0)} mg Koffein um ${fmtTime(s.peakCafAt)}` : '');
     $('#dList').innerHTML = s.drinks.map(drinkRow).join('');
     if (!$('#detailDlg').open) $('#detailDlg').showModal();
-    if (detailChart) detailChart.destroy();
-    detailChart = new Chart($('#detailChart'), chartConfig(s.curve, null, s.hasAlc));
+    if (detailChart) { detailChart.destroy(); detailChart = null; }
+    if (window.Chart) detailChart = new Chart($('#detailChart'), chartConfig(s.curve, null, s.hasAlc));
 }
 
 /* ═════════ Zeitpunkt-Auswahl ═════════
@@ -1958,6 +1972,8 @@ $('#personSel').onchange = async () => {
 };
 
 function show(view) {
+    clearTimeout(bootTimer);
+    $('#loadView').hidden = true;
     $('#loginView').hidden = view !== 'login';
     $('#noAccessView').hidden = view !== 'none';
     $('#appView').hidden = view !== 'app';
@@ -1965,12 +1981,27 @@ function show(view) {
     if (view === 'app') document.querySelectorAll('[data-when]').forEach(x => x.wpRepaint && x.wpRepaint());
 }
 
+/* Start-Wächter: Kommt nach 8 s weder Anmeldung noch App, Sitzung selbst nachfragen; sonst „Neu laden“ anbieten */
+let startCalled = false;
+let bootTimer = setTimeout(async function boot() {
+    $('#loadMsg').textContent = 'Das dauert gerade länger als sonst …';
+    try {
+        const { data } = await withTimeout(sb.auth.getSession(), 6000);
+        if (!startCalled && !$('#loadView').hidden) start(data.session);
+    } catch (e) {
+        $('#loadMsg').textContent = 'Der PegelTracker startet gerade nicht. Bitte neu laden.';
+        $('#loadRetry').hidden = false;
+    }
+}, 8000);
+$('#loadRetry').onclick = () => location.reload();
+
 async function start(session) {
+    startCalled = true;
     S.user = session ? { id: session.user.id, email: session.user.email } : null;
     $('#meBtn').hidden = !S.user;
     if (!S.user) { show('login'); return; }
     try {
-        if (!(await loadPeople())) { myName = S.user.email.split('@')[0]; paintMyAvatar(); loadMyAvatar(); show('none'); return; }
+        if (!(await withTimeout(loadPeople(), 10000))) { myName = S.user.email.split('@')[0]; paintMyAvatar(); loadMyAvatar(); show('none'); return; }
         cacheSet('people_' + S.user.id, { role: S.role, people: S.people });
     } catch (e) {
         const c = cacheGet('people_' + S.user.id);
@@ -2007,9 +2038,17 @@ sb.auth.onAuthStateChange((ev, session) => {
         setTimeout(() => start(session), 0);
     }
 });
+window.ptReady = true;
 
 </script>
 <script>
+/* Falls das Hauptskript gar nicht lief (z. B. Bibliothek nicht geladen): nach 8 s „Neu laden“ anbieten */
+setTimeout(() => {
+    const l = document.getElementById('loadView');
+    if (window.ptReady || !l || l.hidden) return;
+    document.getElementById('loadMsg').textContent = 'Der PegelTracker startet gerade nicht. Bitte neu laden.';
+    const b = document.getElementById('loadRetry'); b.hidden = false; b.onclick = () => location.reload();
+}, 8000);
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 </script>
 </body></html>
