@@ -585,17 +585,11 @@
                     <input id="entryTime" type="hidden" data-when>
                 </div>
 
-                <div class="group"><span class="eyebrow">Koffein</span>
-                    <div id="quickCaf" class="quick"></div>
+                <!-- gleiche Getränkeauswahl wie bei „Nachtragen“ -->
+                <div class="group"><span class="eyebrow">Getränk</span>
+                    <div id="quickAll" class="quick q3"></div>
                 </div>
-
-                <div class="group"><span class="eyebrow">Alkohol</span>
-                    <div id="quickAlc" class="quick"></div>
-                </div>
-
-                <div class="group"><span class="eyebrow">Weitere Getränke</span>
-                    <select id="stdSel" class="inp" aria-label="Standard-Getränk wählen"></select>
-                </div>
+                <div class="group"><select id="stdSel" class="inp" aria-label="Weiteres Getränk wählen"></select></div>
 
                 <label class="food-mini"><input id="foodToggle" type="checkbox"><svg class="ic" aria-hidden="true"><use href="#i-food"/></svg>mit Essensgrundlage</label>
 
@@ -696,6 +690,24 @@
                 <div class="group"><select id="bfSel" class="inp bf-sel" aria-label="Weiteres Getränk nachtragen"></select></div>
                 <label class="food-mini"><input id="bfFood" type="checkbox"><svg class="ic" aria-hidden="true"><use href="#i-food"/></svg>mit Essensgrundlage</label>
                 <button id="bfAdd" class="btn-add" type="button" disabled><span class="m">Erst Getränk auswählen</span><span class="s" hidden></span></button>
+                <details class="manual">
+                    <summary><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg>Manuelle Eingabe<svg class="ic chev" aria-hidden="true"><use href="#i-right"/></svg></summary>
+                    <form id="bfManualForm">
+                        <label class="lbl full">Bezeichnung<input id="bmName" class="inp" type="text" maxlength="80" placeholder="z. B. Hausmarke Gin Tonic" required></label>
+                        <label class="lbl">Menge (Liter)<input id="bmVol" class="inp" type="number" min="0.01" max="5" step="0.01" placeholder="0,2" required></label>
+                        <label class="lbl">Alkohol (Vol.-%)<input id="bmAbv" class="inp" type="number" min="0" max="100" step="0.1" placeholder="12" required></label>
+                        <label class="lbl">Koffein (mg)<input id="bmCaf" class="inp" type="number" min="0" max="2000" step="1" value="0"></label>
+                        <label class="lbl">Kategorie
+                            <select id="bmCat" class="inp">
+                                <option value="cocktail">Cocktail</option><option value="beer">Bier</option><option value="wine">Wein</option>
+                                <option value="sparkling">Sekt</option><option value="shot">Shot</option><option value="spirit">Spirituose</option>
+                                <option value="caffeine">Koffein</option><option value="other">Sonstiges</option>
+                            </select>
+                        </label>
+                        <label class="check full"><input id="bmSave" type="checkbox"> Als eigenes Getränk im Dropdown merken</label>
+                        <button class="btn full" type="submit">Nachtragen</button>
+                    </form>
+                </details>
                 <div id="bfMsg" class="msg" hidden></div>
             </div>
             <div id="bfDayCard" class="card">
@@ -733,7 +745,7 @@
                 <div class="card">
                     <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-glass"/></svg></span><h3>Eigene Getränke</h3></div>
                     <ul id="custList" class="drinks cust"></ul>
-                    <p id="custEmpty" class="hint" hidden>Noch keine eigenen Getränke. Sie entstehen über „Manuelle Eingabe“ beim Eintragen.</p>
+                    <p id="custEmpty" class="hint" hidden>Noch keine eigenen Getränke. Sie entstehen über „Manuelle Eingabe“ beim Eintragen oder Nachtragen.</p>
                     <div id="custMsg" class="msg" hidden></div>
                 </div>
                 <div class="card">
@@ -1531,13 +1543,11 @@ function paintPick() {
     $('#confirmSub').textContent = `${fmtWhen(t)} Uhr${$('#foodToggle').checked ? ' · mit Essensgrundlage' : ''}`;
 }
 function buildEntry() {
-    const chip = (q, i) => `<button class="chip${q.abv > 0 ? '' : ' caf'}" type="button" data-quick="${i}" aria-pressed="false">${drinkIc(q)}<span>${esc(q.name)}<small>${q.abv > 0 ? nf(q.abv, 1) + ' %' : nf(q.caffeine_mg, 0) + ' mg'}</small></span></button>`;
-    $('#quickCaf').innerHTML = QUICK.slice(0, QUICK_CAF).map(chip).join('');
-    $('#quickAlc').innerHTML = QUICK.slice(QUICK_CAF).map((q, i) => chip(q, i + QUICK_CAF)).join('');
+    $('#quickAll').innerHTML = QUICK.map((q, i) => `<button class="chip${q.abv > 0 ? '' : ' caf'}" type="button" data-quick="${i}" aria-pressed="false">${drinkIc(q)}<span>${esc(q.name)}</span></button>`).join('');
     const opt = (d, v) => `<option value="${v}">${esc(d.name)} · ${d.abv > 0 ? nf(d.abv, 1) + ' %' : nf(d.caffeine_mg, 0) + ' mg'}</option>`;
     const opts = STANDARD.map((g, gi) => `<optgroup label="${esc(g.group)}">${g.items.map((d, i) => opt(d, `s${gi}_${i}`)).join('')}</optgroup>`).join('')
         + (S.custom.length ? `<optgroup label="Eigene">${S.custom.map(d => opt(d, 'c' + d.id)).join('')}</optgroup>` : '');
-    $('#stdSel').innerHTML = '<option value="">Getränk auswählen …</option>' + opts;
+    $('#stdSel').innerHTML = '<option value="">Weiteres Getränk auswählen …</option>' + opts;
     $('#bfQuick').innerHTML = QUICK.map((q, i) => `<button class="chip${q.abv > 0 ? '' : ' caf'}" type="button" data-bf-quick="${i}">${drinkIc(q)}<span>${esc(q.name)}</span></button>`).join('');
     $('#bfSel').innerHTML = '<option value="">Weiteres Getränk nachtragen …</option>' + opts;
     clearPick();
@@ -1571,23 +1581,35 @@ $('#confirmAdd').onclick = async () => {
 $('#entryTime').addEventListener('input', () => { entryTimeTouched = $('#entryTime').value !== localInput(Date.now()); paintPick(); });
 $('#foodToggle').addEventListener('change', paintPick);
 $('#timeForm').onsubmit = e => { e.preventDefault(); saveTimeEdit(); };
-$('#manualForm').onsubmit = async e => {
-    e.preventDefault();
+/* Manuelle Eingabe – gleiches Formular bei Eintragen (Präfix m) und Nachtragen (Präfix bm) */
+async function readManual(p, fail) {
+    const v = id => $('#' + p + id).value;
     const d = {
-        name: $('#mName').value.trim(), category: $('#mCat').value,
-        volume_ml: Math.round(parseFloat(String($('#mVol').value).replace(',', '.')) * 1000),
-        abv: parseFloat(String($('#mAbv').value).replace(',', '.')) || 0,
-        caffeine_mg: parseFloat($('#mCaf').value) || 0
+        name: v('Name').trim(), category: v('Cat'),
+        volume_ml: Math.round(parseFloat(String(v('Vol')).replace(',', '.')) * 1000),
+        abv: parseFloat(String(v('Abv')).replace(',', '.')) || 0,
+        caffeine_mg: parseFloat(v('Caf')) || 0
     };
-    if (!d.name || !(d.volume_ml > 0)) return flash('Bitte Bezeichnung und Menge angeben.', false);
-    if ($('#mSave').checked) {
+    if (!d.name || !(d.volume_ml > 0)) { fail('Bitte Bezeichnung und Menge angeben.'); return null; }
+    if ($('#' + p + 'Save').checked) {
         try {
             const row = check(await sb.from('pegel_custom_drinks').upsert(d, { onConflict: 'user_id,name' }).select().single());
             S.custom = S.custom.filter(c => c.id !== row.id).concat(row).sort((a, b) => a.name.localeCompare(b.name));
             buildEntry();
-        } catch (err) { flash(errorText(err), false); }
+        } catch (err) { fail(errorText(err)); }
     }
+    return d;
+}
+$('#manualForm').onsubmit = async e => {
+    e.preventDefault();
+    const d = await readManual('m', t => flash(t, false)); if (!d) return;
     await addDrink(d);
+    e.target.reset();
+};
+$('#bfManualForm').onsubmit = async e => {
+    e.preventDefault();
+    const d = await readManual('bm', t => bfMsg(t, false)); if (!d) return;
+    await bfAdd(d);
     e.target.reset();
 };
 
