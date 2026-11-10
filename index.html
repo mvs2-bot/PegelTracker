@@ -208,6 +208,11 @@
             background-repeat: no-repeat; background-position: right 12px center; background-size: 14px; }
         @media (min-width: 640px) { .inp { font-size: 14px; } }
         .lbl { display: grid; gap: 4px; font-size: 12px; font-weight: 500; color: var(--mute); }
+        /* Essensgrundlage: bewusst unauffällig, kleine Zeile über dem Hinzufügen-Button */
+        .food-mini { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 10px 2px; font-size: 12px; font-weight: 500; color: var(--mute); cursor: pointer; user-select: none; -webkit-user-select: none; }
+        .food-mini input { width: 14px; height: 14px; margin: 0; accent-color: var(--p1); }
+        .food-mini .ic { width: 14px; height: 14px; }
+        .food-mini:has(input:checked) { color: var(--p1); }
         .toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; padding: 10px 12px; border-radius: var(--radius-s); background: var(--well); cursor: pointer; }
         .toggle .t { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; color: var(--ink); }
         .toggle .t .ic { width: 18px; height: 18px; color: var(--mute); }
@@ -564,10 +569,7 @@
                     <select id="stdSel" class="inp" aria-label="Standard-Getränk wählen"></select>
                 </div>
 
-                <label class="toggle">
-                    <span class="t"><svg class="ic" aria-hidden="true"><use href="#i-food"/></svg>Gute Essensgrundlage</span>
-                    <span class="switch"><input id="foodToggle" type="checkbox"><span></span></span>
-                </label>
+                <label class="food-mini"><input id="foodToggle" type="checkbox"><svg class="ic" aria-hidden="true"><use href="#i-food"/></svg>mit Essensgrundlage</label>
 
                 <button id="confirmAdd" class="btn-add" type="button" disabled>
                     <span id="confirmMain">Erst Getränk auswählen</span>
@@ -664,10 +666,8 @@
                     <div id="bfQuick" class="quick q3"></div>
                 </div>
                 <div class="group"><select id="bfSel" class="inp bf-sel" aria-label="Weiteres Getränk nachtragen"></select></div>
-                <label class="toggle"><span class="t"><svg class="ic" aria-hidden="true"><use href="#i-food"/></svg>Gute Essensgrundlage</span>
-                    <span class="switch"><input id="bfFood" type="checkbox"><span></span></span></label>
+                <label class="food-mini"><input id="bfFood" type="checkbox"><svg class="ic" aria-hidden="true"><use href="#i-food"/></svg>mit Essensgrundlage</label>
                 <button id="bfAdd" class="btn-add" type="button" disabled><span class="m">Erst Getränk auswählen</span><span class="s" hidden></span></button>
-                <p class="hint">Nach dem Hinzufügen rückt die Zeit für das nächste Getränk automatisch 30 min weiter.</p>
                 <div id="bfMsg" class="msg" hidden></div>
             </div>
             <div id="bfDayCard" class="card">
