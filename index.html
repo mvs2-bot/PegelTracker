@@ -131,6 +131,9 @@
         .eyebrow { font-size: 12px; font-weight: 500; color: var(--mute); }
         .hint { font-size: 12px; color: var(--mute); }
         .cols { display: grid; gap: 14px; }
+        .dash-date { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 4px; }
+        .dash-date span { font-size: 15px; font-weight: 600; color: var(--ink); }
+        .dash-date b { font-size: 15px; font-weight: 600; color: var(--mute); font-variant-numeric: tabular-nums; }
         .col { display: grid; gap: 14px; align-content: start; min-width: 0; }
         @media (min-width: 1024px) {
             .cols { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; }
@@ -625,6 +628,8 @@
         <!-- Dashboard -->
         <section id="dashView" hidden>
             <div class="col">
+                <!-- heute: Wochentag, Datum, Uhrzeit -->
+                <div class="dash-date"><span id="dashDay"></span><b id="dashClock"></b></div>
                 <!-- aktueller Stand -->
                 <div class="card">
                     <div class="now-top">
@@ -1807,6 +1812,15 @@ document.addEventListener('click', e => {
     e.preventDefault(); setTab('profile');
     requestAnimationFrame(() => $('#bodyCard').scrollIntoView({ behavior: 'smooth', block: 'start' }));
 });
+
+/* Dashboard-Kopf: Wochentag, Datum, Uhrzeit (sekundengenau, damit der Minutenwechsel stimmt) */
+function paintDashDate() {
+    const n = new Date();
+    $('#dashDay').textContent = n.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    $('#dashClock').textContent = fmtTime(n) + ' Uhr';
+}
+paintDashDate();
+setInterval(() => { if (!$('#dashView').hidden) paintDashDate(); }, 1000);
 
 /* ═════════ Konto, Thema, Start ═════════ */
 function applyTheme(dark, save) {
