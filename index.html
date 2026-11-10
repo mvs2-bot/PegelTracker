@@ -19,7 +19,7 @@
         /* Apple-Designsprache wie im Dashboard (mvs2-bot.github.io), „Zuhause“ und DailyMind.
            Eigener Akzent: Gold (wie ein volles Glas). Text und Symbole im dunkleren Gold, Flächen in hellem Gold mit dunkler Schrift. Koffein in Braun, Pegelstufen von Grün bis Rot. */
         :root {
-            --bg: #f2f2f7; --card: #fff; --well: #f2f2f7; --hover: #e9e9ef; --line: #e2e2e7; --sep: rgba(60, 60, 67, .14);
+            --add-tint: 16%; --bg: #f2f2f7; --card: #fff; --well: #f2f2f7; --hover: #e9e9ef; --line: #e2e2e7; --sep: rgba(60, 60, 67, .14);
             --ink: #1c1c1e; --text: #3a3a3c; --mute: #6c6c70;
             --p1: #b45309; --p1-fill: #f2b445; --p1-soft: #fdf0e1; --on-p1: #1c1c1e;
             --caf: #8a5a2b; --caf-soft: #f6ede3;
@@ -34,7 +34,7 @@
             color-scheme: light;
         }
         .dark {
-            color-scheme: dark; --bg: #000; --card: #1c1c1e; --well: #2c2c2e; --hover: #3a3a3c; --line: #38383a; --sep: rgba(84, 84, 88, .55);
+            color-scheme: dark; --add-tint: 26%; --bg: #000; --card: #1c1c1e; --well: #2c2c2e; --hover: #3a3a3c; --line: #38383a; --sep: rgba(84, 84, 88, .55);
             --ink: #f5f5f7; --text: #d1d1d6; --mute: #98989f;
             --p1: #f5b445; --p1-fill: #f5b445; --p1-soft: #2e1f08; --on-p1: #1c1c1e;
             --caf: #d4a373; --caf-soft: #2e2216;
@@ -123,6 +123,8 @@
         /* Karten */
         .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
         .card h2, .card h3 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); line-height: 1.3; }
+        .entry-head { display: flex; align-items: center; gap: 6px; margin: -2px 0 10px; color: var(--p1); }
+        .entry-head .ic { width: 16px; height: 16px; stroke-width: 2.2; }
         .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
         .card-head h3 { flex: 1; min-width: 0; }
         .badge-ic { flex: none; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--p1-soft); color: var(--p1); }
@@ -289,9 +291,9 @@
         .wp-quick { display: flex; flex-wrap: wrap; gap: 6px; }
         .wp-quick[hidden] { display: none; }
         /* Drehräder: 5 sichtbare Zeilen à 36 px, die mittlere ist gewählt */
-        .wp-wheels { position: relative; display: flex; justify-content: center; align-items: center; gap: 4px; height: 180px; border-radius: var(--radius-s); background: var(--well); overflow: hidden; }
-        .wp-wheels::before { content: ""; position: absolute; left: 10px; right: 10px; top: 72px; height: 36px; border-radius: 10px; background: color-mix(in srgb, var(--p1-fill) 30%, transparent); pointer-events: none; }
-        .wp-wheel { position: relative; width: 76px; height: 180px; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; padding: 72px 0; overscroll-behavior: contain; outline: none;
+        .wp-wheels { position: relative; display: flex; justify-content: center; align-items: center; gap: 4px; height: 108px; border-radius: var(--radius-s); background: var(--well); overflow: hidden; }
+        .wp-wheels::before { content: ""; position: absolute; left: 10px; right: 10px; top: 36px; height: 36px; border-radius: 10px; background: color-mix(in srgb, var(--p1-fill) 30%, transparent); pointer-events: none; }
+        .wp-wheel { position: relative; width: 76px; height: 108px; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; padding: 36px 0; overscroll-behavior: contain; outline: none;
             -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); }
         .wp-wheel::-webkit-scrollbar { display: none; }
         .wp-wheel:focus-visible { box-shadow: inset 0 0 0 1.5px var(--p1); border-radius: 10px; }
@@ -457,8 +459,10 @@
             .tabbar .bar-ava { width: 26px; height: 26px; flex: 0 0 26px; font-size: 11px; }
             .tabbar [aria-current="page"] .bar-ava { box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--p1); }
             /* Eintragen (Plus) mit leicht goldenem Hintergrund, damit klar ist: hier kommt etwas Neues dazu */
-            body.adding, body.adding header { background: color-mix(in srgb, var(--p1-fill) 16%, var(--bg)); }
-            body.adding header { background: color-mix(in srgb, color-mix(in srgb, var(--p1-fill) 16%, var(--bg)) 82%, transparent); }
+            body.adding, body.adding header { background: color-mix(in srgb, var(--p1-fill) var(--add-tint), var(--bg)); }
+            body.adding header { background: color-mix(in srgb, color-mix(in srgb, var(--p1-fill) var(--add-tint), var(--bg)) 82%, transparent); }
+            /* Eintragen-Karte zusätzlich mit feinem Goldrand, damit sie auch im Dunkeln klar als „neu“ erkennbar ist */
+            body.adding #entryCard { outline: 1.5px solid color-mix(in srgb, var(--p1-fill) 55%, transparent); outline-offset: -1.5px; }
         }
         @media (prefers-reduced-transparency: reduce) { .tabbar { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; } }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
@@ -582,9 +586,9 @@
                 <div class="mini-drinks"><div id="miniDrinks" class="icons"></div><span id="miniCount" class="hint"></span></div>
             </div>
             <div id="entryCard" class="card">
-                <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></span><h3>Neuer Eintrag</h3></div>
+                <h3 class="entry-head"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>Neuer Eintrag</h3>
 
-                <div class="group"><span class="eyebrow">Zeitpunkt</span>
+                <div class="group">
                     <input id="entryTime" type="hidden" data-when>
                 </div>
 
@@ -686,7 +690,7 @@
         <section id="bfView" class="narrow" hidden>
             <div id="bfCard" class="card">
                 <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-rewind"/></svg></span><h3>Nachtragen</h3></div>
-                <div class="group"><span class="eyebrow">Zeitpunkt</span>
+                <div class="group">
                     <input id="bfTime" type="hidden" data-when>
                 </div>
                 <div class="group"><span class="eyebrow">Getränk</span>
@@ -1088,8 +1092,8 @@ const cacheSet = (k, v) => { try { localStorage.setItem(CACHE + k, JSON.stringif
 const clearCache = () => { try { Object.keys(localStorage).filter(k => k.startsWith(CACHE)).forEach(k => localStorage.removeItem(k)); } catch (e) {} };
 const isNetErr = e => !navigator.onLine || /fetch|network|load failed|timeout/i.test(String(e && (e.message || e)));
 
-const S = { user: null, role: null, people: [], viewId: null, drinks: [], custom: [], sessions: [], body: null, tab: 'dash' };
-/* Startseite ist das Dashboard; beim Neuladen bleibt die zuletzt offene Seite (gilt nur für diesen Tab/diese Sitzung) */
+const S = { user: null, role: null, people: [], viewId: null, drinks: [], custom: [], sessions: [], body: null, tab: 'add' };
+/* Startseite ist „Eintragen“; beim Neuladen bleibt die zuletzt offene Seite (gilt nur für diesen Tab/diese Sitzung) */
 try { const t = sessionStorage.getItem('pt-tab'); if (['add', 'bf', 'dash', 'hist', 'profile'].includes(t)) S.tab = t; } catch (e) {}
 const viewPerson = () => S.people.find(p => p.id === S.viewId) || null;
 const viewingSelf = () => S.user && S.viewId === S.user.id;
@@ -1956,6 +1960,8 @@ function show(view) {
     $('#loginView').hidden = view !== 'login';
     $('#noAccessView').hidden = view !== 'none';
     $('#appView').hidden = view !== 'app';
+    /* Drehräder erst messen, wenn die App sichtbar ist (Startseite „Eintragen“) */
+    if (view === 'app') document.querySelectorAll('[data-when]').forEach(x => x.wpRepaint && x.wpRepaint());
 }
 
 async function start(session) {
