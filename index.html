@@ -302,6 +302,20 @@
         .wp-hours + .eyebrow { margin-top: 12px; }
         .wp-cell:disabled { opacity: .35; cursor: default; }
         /* Profil-Seite (Handy): Kontomenü als Karte */
+        /* Profil-Seite: Statistik, Körperdaten, eigene Getränke, Export */
+        .prof-extras { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+        .prof-extras[hidden] { display: none; }
+        .pstats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .pstats div { padding: 10px 12px; border-radius: var(--radius-s); background: var(--well); }
+        .pstats b { display: block; font-size: 20px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+        .pstats span { font-size: 12px; color: var(--mute); }
+        .body-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+        .body-grid .btn { grid-column: 1 / -1; }
+        .body-grid .inp { min-height: 40px; }
+        .cust .txt input { width: 100%; min-height: 34px; padding: 4px 8px; border: 0; border-radius: 8px; background: var(--well); color: var(--ink); font-size: 16px; font-weight: 600; }
+        .cust .row-btn.danger:hover { color: var(--danger); }
+        .csv-btn { width: 100%; margin-top: 10px; background: var(--p1-soft); color: var(--p1); }
+        .csv-btn .ic { width: 18px; height: 18px; }
         .pm-menu.as-page { position: static; width: auto; max-width: none; padding: 8px; border-radius: var(--radius); box-shadow: var(--shadow); }
         /* Profil-Seite: Bild groß und mittig, Name darunter */
         .pm-menu.as-page .pm-head { flex-direction: column; text-align: center; gap: 10px; padding: 18px 10px 16px; }
@@ -484,6 +498,7 @@
     <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></symbol>
     <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
     <symbol id="i-logout" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"/></symbol>
 </svg>
 
@@ -570,17 +585,11 @@
                     <input id="entryTime" type="hidden" data-when>
                 </div>
 
-                <div class="group"><span class="eyebrow">Koffein</span>
-                    <div id="quickCaf" class="quick"></div>
+                <!-- gleiche Getränkeauswahl wie bei „Nachtragen“ -->
+                <div class="group"><span class="eyebrow">Getränk</span>
+                    <div id="quickAll" class="quick q3"></div>
                 </div>
-
-                <div class="group"><span class="eyebrow">Alkohol</span>
-                    <div id="quickAlc" class="quick"></div>
-                </div>
-
-                <div class="group"><span class="eyebrow">Weitere Getränke</span>
-                    <select id="stdSel" class="inp" aria-label="Standard-Getränk wählen"></select>
-                </div>
+                <div class="group"><select id="stdSel" class="inp" aria-label="Weiteres Getränk wählen"></select></div>
 
                 <label class="food-mini"><input id="foodToggle" type="checkbox"><svg class="ic" aria-hidden="true"><use href="#i-food"/></svg>mit Essensgrundlage</label>
 
@@ -681,6 +690,24 @@
                 <div class="group"><select id="bfSel" class="inp bf-sel" aria-label="Weiteres Getränk nachtragen"></select></div>
                 <label class="food-mini"><input id="bfFood" type="checkbox"><svg class="ic" aria-hidden="true"><use href="#i-food"/></svg>mit Essensgrundlage</label>
                 <button id="bfAdd" class="btn-add" type="button" disabled><span class="m">Erst Getränk auswählen</span><span class="s" hidden></span></button>
+                <details class="manual">
+                    <summary><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg>Manuelle Eingabe<svg class="ic chev" aria-hidden="true"><use href="#i-right"/></svg></summary>
+                    <form id="bfManualForm">
+                        <label class="lbl full">Bezeichnung<input id="bmName" class="inp" type="text" maxlength="80" placeholder="z. B. Hausmarke Gin Tonic" required></label>
+                        <label class="lbl">Menge (Liter)<input id="bmVol" class="inp" type="number" min="0.01" max="5" step="0.01" placeholder="0,2" required></label>
+                        <label class="lbl">Alkohol (Vol.-%)<input id="bmAbv" class="inp" type="number" min="0" max="100" step="0.1" placeholder="12" required></label>
+                        <label class="lbl">Koffein (mg)<input id="bmCaf" class="inp" type="number" min="0" max="2000" step="1" value="0"></label>
+                        <label class="lbl">Kategorie
+                            <select id="bmCat" class="inp">
+                                <option value="cocktail">Cocktail</option><option value="beer">Bier</option><option value="wine">Wein</option>
+                                <option value="sparkling">Sekt</option><option value="shot">Shot</option><option value="spirit">Spirituose</option>
+                                <option value="caffeine">Koffein</option><option value="other">Sonstiges</option>
+                            </select>
+                        </label>
+                        <label class="check full"><input id="bmSave" type="checkbox"> Als eigenes Getränk im Dropdown merken</label>
+                        <button class="btn full" type="submit">Nachtragen</button>
+                    </form>
+                </details>
                 <div id="bfMsg" class="msg" hidden></div>
             </div>
             <div id="bfDayCard" class="card">
@@ -696,7 +723,39 @@
             <p id="histEmpty" class="card empty" hidden>Noch keine abgeschlossenen Sessions.</p>
         </section>
         <!-- Profil (nur Handy): das Kontomenü wird hier als Seite angezeigt -->
-        <section id="profileView" class="narrow" hidden></section>
+        <section id="profileView" class="narrow" hidden>
+            <!-- Kontomenü wird per placeMenu() davor eingehängt -->
+            <div id="profExtras" class="prof-extras">
+                <div class="card">
+                    <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg></span><h3 id="profStatsLbl">Diesen Monat</h3></div>
+                    <div id="profStats" class="pstats"></div>
+                </div>
+                <div id="bodyCard" class="card">
+                    <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-person"/></svg></span><h3>Körperdaten</h3></div>
+                    <p class="hint">Für die Promille-Berechnung. Gilt für alle Apps mit diesem Konto.</p>
+                    <form id="bodyForm" class="body-grid">
+                        <label class="lbl">Geschlecht<select id="bSex" class="inp"><option value="">–</option><option value="female">weiblich</option><option value="male">männlich</option><option value="diverse">divers</option></select></label>
+                        <label class="lbl">Geburtsdatum<input id="bBirth" class="inp" type="date" min="1900-01-01"></label>
+                        <label class="lbl">Größe (cm)<input id="bHeight" class="inp" type="number" min="50" max="250" step="1" inputmode="numeric"></label>
+                        <label class="lbl">Gewicht (kg)<input id="bWeight" class="inp" type="number" min="20" max="300" step="0.1" inputmode="decimal"></label>
+                        <button id="bodySave" class="btn" type="submit">Speichern</button>
+                    </form>
+                    <div id="bodyMsg" class="msg" hidden></div>
+                </div>
+                <div class="card">
+                    <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-glass"/></svg></span><h3>Eigene Getränke</h3></div>
+                    <ul id="custList" class="drinks cust"></ul>
+                    <p id="custEmpty" class="hint" hidden>Noch keine eigenen Getränke. Sie entstehen über „Manuelle Eingabe“ beim Eintragen oder Nachtragen.</p>
+                    <div id="custMsg" class="msg" hidden></div>
+                </div>
+                <div class="card">
+                    <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg></span><h3>Daten exportieren</h3></div>
+                    <p class="hint">Alle deine Einträge als CSV-Datei, z. B. für Excel.</p>
+                    <button id="csvBtn" class="btn ghost csv-btn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>Als CSV herunterladen</button>
+                </div>
+            </div>
+            <div id="profRo" class="card ro" hidden><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg><span>Statistik, Körperdaten und Export gibt es nur für deinen eigenen Bereich.</span></div>
+        </section>
 
         <!-- Untere Tab-Leiste (nur Handy, siehe CSS) -->
         <nav class="tabbar" aria-label="Navigation">
@@ -1168,6 +1227,7 @@ function valueAt(curve, t) {
 }
 
 function render() {
+    renderProfile();
     const now = Date.now();
     const s = activeSession(now);
     const me = viewPerson();
@@ -1483,13 +1543,11 @@ function paintPick() {
     $('#confirmSub').textContent = `${fmtWhen(t)} Uhr${$('#foodToggle').checked ? ' · mit Essensgrundlage' : ''}`;
 }
 function buildEntry() {
-    const chip = (q, i) => `<button class="chip${q.abv > 0 ? '' : ' caf'}" type="button" data-quick="${i}" aria-pressed="false">${drinkIc(q)}<span>${esc(q.name)}<small>${q.abv > 0 ? nf(q.abv, 1) + ' %' : nf(q.caffeine_mg, 0) + ' mg'}</small></span></button>`;
-    $('#quickCaf').innerHTML = QUICK.slice(0, QUICK_CAF).map(chip).join('');
-    $('#quickAlc').innerHTML = QUICK.slice(QUICK_CAF).map((q, i) => chip(q, i + QUICK_CAF)).join('');
+    $('#quickAll').innerHTML = QUICK.map((q, i) => `<button class="chip${q.abv > 0 ? '' : ' caf'}" type="button" data-quick="${i}" aria-pressed="false">${drinkIc(q)}<span>${esc(q.name)}</span></button>`).join('');
     const opt = (d, v) => `<option value="${v}">${esc(d.name)} · ${d.abv > 0 ? nf(d.abv, 1) + ' %' : nf(d.caffeine_mg, 0) + ' mg'}</option>`;
     const opts = STANDARD.map((g, gi) => `<optgroup label="${esc(g.group)}">${g.items.map((d, i) => opt(d, `s${gi}_${i}`)).join('')}</optgroup>`).join('')
         + (S.custom.length ? `<optgroup label="Eigene">${S.custom.map(d => opt(d, 'c' + d.id)).join('')}</optgroup>` : '');
-    $('#stdSel').innerHTML = '<option value="">Getränk auswählen …</option>' + opts;
+    $('#stdSel').innerHTML = '<option value="">Weiteres Getränk auswählen …</option>' + opts;
     $('#bfQuick').innerHTML = QUICK.map((q, i) => `<button class="chip${q.abv > 0 ? '' : ' caf'}" type="button" data-bf-quick="${i}">${drinkIc(q)}<span>${esc(q.name)}</span></button>`).join('');
     $('#bfSel').innerHTML = '<option value="">Weiteres Getränk nachtragen …</option>' + opts;
     clearPick();
@@ -1523,23 +1581,35 @@ $('#confirmAdd').onclick = async () => {
 $('#entryTime').addEventListener('input', () => { entryTimeTouched = $('#entryTime').value !== localInput(Date.now()); paintPick(); });
 $('#foodToggle').addEventListener('change', paintPick);
 $('#timeForm').onsubmit = e => { e.preventDefault(); saveTimeEdit(); };
-$('#manualForm').onsubmit = async e => {
-    e.preventDefault();
+/* Manuelle Eingabe – gleiches Formular bei Eintragen (Präfix m) und Nachtragen (Präfix bm) */
+async function readManual(p, fail) {
+    const v = id => $('#' + p + id).value;
     const d = {
-        name: $('#mName').value.trim(), category: $('#mCat').value,
-        volume_ml: Math.round(parseFloat(String($('#mVol').value).replace(',', '.')) * 1000),
-        abv: parseFloat(String($('#mAbv').value).replace(',', '.')) || 0,
-        caffeine_mg: parseFloat($('#mCaf').value) || 0
+        name: v('Name').trim(), category: v('Cat'),
+        volume_ml: Math.round(parseFloat(String(v('Vol')).replace(',', '.')) * 1000),
+        abv: parseFloat(String(v('Abv')).replace(',', '.')) || 0,
+        caffeine_mg: parseFloat(v('Caf')) || 0
     };
-    if (!d.name || !(d.volume_ml > 0)) return flash('Bitte Bezeichnung und Menge angeben.', false);
-    if ($('#mSave').checked) {
+    if (!d.name || !(d.volume_ml > 0)) { fail('Bitte Bezeichnung und Menge angeben.'); return null; }
+    if ($('#' + p + 'Save').checked) {
         try {
             const row = check(await sb.from('pegel_custom_drinks').upsert(d, { onConflict: 'user_id,name' }).select().single());
             S.custom = S.custom.filter(c => c.id !== row.id).concat(row).sort((a, b) => a.name.localeCompare(b.name));
             buildEntry();
-        } catch (err) { flash(errorText(err), false); }
+        } catch (err) { fail(errorText(err)); }
     }
+    return d;
+}
+$('#manualForm').onsubmit = async e => {
+    e.preventDefault();
+    const d = await readManual('m', t => flash(t, false)); if (!d) return;
     await addDrink(d);
+    e.target.reset();
+};
+$('#bfManualForm').onsubmit = async e => {
+    e.preventDefault();
+    const d = await readManual('bm', t => bfMsg(t, false)); if (!d) return;
+    await bfAdd(d);
     e.target.reset();
 };
 
@@ -1620,6 +1690,124 @@ $('#bfTime').addEventListener('input', () => {
     BF.t = t; renderBackfill();
 });
 
+/* ═════════ Profil-Seite: Statistik, Körperdaten, eigene Getränke, Export ═════════ */
+const meP = () => S.people.find(p => p.is_me) || {};
+function renderProfile() {
+    if (S.tab !== 'profile') return;
+    const self = viewingSelf();
+    $('#profExtras').hidden = !self; $('#profRo').hidden = self || !S.user;
+    if (!self) return;
+    /* Statistik: laufender Monat */
+    const now = new Date(), from = +new Date(now.getFullYear(), now.getMonth(), 1);
+    const drinks = S.drinks.filter(d => +new Date(d.consumed_at) >= from);
+    const ses = S.sessions.filter(x => x.start >= from);
+    const peak = ses.reduce((m, x) => Math.max(m, x.hasAlc ? x.peak : 0), 0);
+    const g = drinks.reduce((a, d) => a + (d.abv > 0 ? grams(d) : 0), 0);
+    $('#profStatsLbl').textContent = now.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+    $('#profStats').innerHTML = [[ses.length, ses.length === 1 ? 'Session' : 'Sessions'], [drinks.length, drinks.length === 1 ? 'Getränk' : 'Getränke'],
+        [nf(peak) + ' ‰', 'höchster Pegel'], [nf(g, 0) + ' g', 'Alkohol gesamt']]
+        .map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('');
+    /* Körperdaten nur füllen, solange der Nutzer nicht gerade tippt */
+    if (!$('#bodyForm').contains(document.activeElement)) {
+        const p = meP();
+        $('#bSex').value = p.gender || ''; $('#bBirth').value = p.birthday || '';
+        $('#bHeight').value = p.height_cm ?? ''; $('#bWeight').value = p.weight_kg ?? '';
+        $('#bBirth').max = localInput(Date.now()).slice(0, 10);
+    }
+    if (custEdit == null) renderCustom();   /* Umbenennen nicht durch die minütliche Aktualisierung abbrechen */
+}
+let custEdit = null;
+function renderCustom() {
+    $('#custEmpty').hidden = S.custom.length > 0;
+    $('#custList').innerHTML = S.custom.map(d => {
+        const meta = [d.volume_ml >= 1000 ? nf(d.volume_ml / 1000, 1) + ' l' : nf(d.volume_ml, 0) + ' ml'];
+        if (d.abv > 0) meta.push(nf(d.abv, 1) + ' %');
+        if (d.caffeine_mg > 0) meta.push(nf(d.caffeine_mg, 0) + ' mg Koffein');
+        const editing = custEdit === d.id;
+        return `<li data-cust="${d.id}">
+            <span class="badge-ic${d.abv > 0 ? '' : ' caf'}">${drinkIc(d)}</span>
+            <span class="txt">${editing ? `<input value="${esc(d.name)}" maxlength="60" aria-label="Neuer Name">` : `<b>${esc(d.name)}</b>`}<span>${meta.join(' · ')}</span></span>
+            ${editing ? `<button class="row-btn" type="button" data-cust-save aria-label="Speichern">${ic('check')}</button><button class="row-btn" type="button" data-cust-cancel aria-label="Abbrechen">${ic('x')}</button>`
+                : `<button class="row-btn" type="button" data-cust-edit aria-label="${esc(d.name)} umbenennen">${ic('pencil')}</button><button class="row-btn danger" type="button" data-cust-del aria-label="${esc(d.name)} löschen">${ic('trash')}</button>`}
+        </li>`;
+    }).join('');
+    const inp = $('#custList input'); if (inp) { inp.focus(); inp.select(); }
+}
+function profMsg(sel, text, ok) { const m = $(sel); m.hidden = !text; m.textContent = text || ''; m.className = 'msg' + (ok ? ' ok' : ''); }
+async function saveCustomName(id, name) {
+    name = name.trim(); const d = S.custom.find(c => c.id === id);
+    if (!d || !name || name === d.name) { custEdit = null; return renderCustom(); }
+    try {
+        const row = check(await sb.from('pegel_custom_drinks').update({ name }).eq('id', id).select().single());
+        Object.assign(d, row); S.custom.sort((a, b) => a.name.localeCompare(b.name));
+        custEdit = null; buildEntry(); profMsg('#custMsg', '');
+        cacheSet('drinks_' + S.viewId, { drinks: S.drinks, custom: S.custom });
+    } catch (e) { profMsg('#custMsg', /duplicate|unique/i.test(e.message) ? 'Diesen Namen gibt es schon.' : errorText(e)); }
+    renderCustom();
+}
+$('#custList').addEventListener('click', async e => {
+    const li = e.target.closest('[data-cust]'); if (!li) return;
+    const id = S.custom.find(c => String(c.id) === li.dataset.cust)?.id; if (id == null) return;
+    if (e.target.closest('[data-cust-edit]')) { custEdit = id; return renderCustom(); }
+    if (e.target.closest('[data-cust-cancel]')) { custEdit = null; return renderCustom(); }
+    if (e.target.closest('[data-cust-save]')) return saveCustomName(id, li.querySelector('input').value);
+    if (e.target.closest('[data-cust-del]')) {
+        const d = S.custom.find(c => c.id === id);
+        if (!confirm(`„${d.name}“ aus deinen eigenen Getränken löschen? Bereits eingetragene Getränke bleiben erhalten.`)) return;
+        try {
+            check(await sb.from('pegel_custom_drinks').delete().eq('id', id));
+            S.custom = S.custom.filter(c => c.id !== id); buildEntry(); profMsg('#custMsg', '');
+            cacheSet('drinks_' + S.viewId, { drinks: S.drinks, custom: S.custom });
+        } catch (err) { profMsg('#custMsg', errorText(err)); }
+        renderCustom();
+    }
+});
+$('#custList').addEventListener('keydown', e => {
+    if (e.target.tagName !== 'INPUT') return;
+    const li = e.target.closest('[data-cust]'), id = S.custom.find(c => String(c.id) === li.dataset.cust)?.id;
+    if (e.key === 'Enter') { e.preventDefault(); saveCustomName(id, e.target.value); }
+    if (e.key === 'Escape') { custEdit = null; renderCustom(); }
+});
+$('#bodyForm').onsubmit = async e => {
+    e.preventDefault();
+    const num = s => { const v = $(s).value.trim(); return v === '' ? null : Number(v); };
+    const fields = { gender: $('#bSex').value || null, birthday: $('#bBirth').value || null, height_cm: num('#bHeight'), weight_kg: num('#bWeight') };
+    if (fields.birthday && fields.birthday > localInput(Date.now()).slice(0, 10)) return profMsg('#bodyMsg', 'Das Geburtsdatum darf nicht in der Zukunft liegen.');
+    if (fields.height_cm != null && (fields.height_cm < 50 || fields.height_cm > 250)) return profMsg('#bodyMsg', 'Die Größe muss zwischen 50 und 250 cm liegen.');
+    if (fields.weight_kg != null && (fields.weight_kg < 20 || fields.weight_kg > 300)) return profMsg('#bodyMsg', 'Das Gewicht muss zwischen 20 und 300 kg liegen.');
+    const b = $('#bodySave'); b.disabled = true; profMsg('#bodyMsg', '');
+    try {
+        const row = check(await sb.from('overall_profiles').update(fields).eq('id', S.user.id).select('gender, birthday, height_cm, weight_kg').single());
+        Object.assign(meP(), row);
+        cacheSet('people_' + S.user.id, { role: S.role, people: S.people });
+        recompute(); render(); renderProfile();
+        profMsg('#bodyMsg', 'Gespeichert. Die Berechnung nutzt jetzt deine Daten.', true);
+    } catch (err) { profMsg('#bodyMsg', errorText(err)); }
+    finally { b.disabled = false; }
+};
+/* CSV: Semikolon und deutsche Zahlen, damit Excel die Datei direkt richtig öffnet */
+$('#csvBtn').onclick = () => {
+    const q = v => { const t = String(v ?? ''); return /[;"\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+    const n = (x, d) => x ? nf(x, d).replace(/\./g, '') : '0';
+    const rows = [...S.drinks].sort((a, b) => new Date(a.consumed_at) - new Date(b.consumed_at)).map(d => {
+        const t = new Date(d.consumed_at);
+        return [t.toLocaleDateString('de-DE'), fmtTime(t), d.name, n(d.volume_ml, 0), n(d.abv, 1), n(d.abv > 0 ? grams(d) : 0, 1), n(d.caffeine_mg, 0), d.with_food ? 'ja' : 'nein'];
+    });
+    const csv = '﻿' + [['Datum', 'Uhrzeit', 'Getränk', 'Menge (ml)', 'Alkohol (%)', 'Alkohol (g)', 'Koffein (mg)', 'mit Essen'], ...rows].map(r => r.map(q).join(';')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = `pegeltracker-${localInput(Date.now()).slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+/* Hinweis „Jetzt ergänzen“: am Handy direkt zu den Körperdaten auf der Profil-Seite */
+document.addEventListener('click', e => {
+    const a = e.target.closest('#banner a[href*="konto.html"]');
+    if (!a || !mobileMq.matches || !viewingSelf()) return;
+    e.preventDefault(); setTab('profile');
+    requestAnimationFrame(() => $('#bodyCard').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+});
+
 /* ═════════ Konto, Thema, Start ═════════ */
 function applyTheme(dark, save) {
     document.documentElement.classList.toggle('dark', dark);
@@ -1658,7 +1846,7 @@ function setTab(t) {
 /* Profil-Seite: das bestehende Kontomenü (Sync, Bereich ansehen, Links, Abmelden) wird in die Seite gehängt */
 function placeMenu() {
     const m = $('#meMenu'), page = S.tab === 'profile' && mobileMq.matches;
-    if (page) { m.classList.add('as-page'); $('#profileView').appendChild(m); paintSync(); m.hidden = false; }
+    if (page) { m.classList.add('as-page'); $('#profileView').prepend(m); paintSync(); m.hidden = false; renderProfile(); }
     else if (m.classList.contains('as-page')) { m.classList.remove('as-page'); m.hidden = true; $('.me').appendChild(m); }
 }
 mobileMq.addEventListener('change', () => setTab(S.tab));
@@ -1782,6 +1970,7 @@ async function start(session) {
     $('#entryTime').value = localInput(Date.now());
     recompute(); render();
     if (S.tab === 'bf') renderBackfill();   /* nach Neuladen auf „Nachtragen“ */
+    renderProfile();
 }
 
 /* Live: jede Minute neu berechnen (Pegel, Meilensteine, Chart) */
