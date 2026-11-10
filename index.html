@@ -369,10 +369,34 @@
         .dlg .btns { display: flex; gap: 8px; }
         .dlg .btns .btn { flex: 1; }
 
+        /* Untere Tab-Leiste: NUR auf dem Handy (< 768 px). Am Desktop bleibt die Bedienung wie bisher (Segmente oben). */
+        .tabbar { display: none; }
+        @media (max-width: 767.98px) {
+            .tabbar { position: fixed; z-index: 35; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr);
+                height: calc(58px + env(safe-area-inset-bottom, 0px)); padding: 4px max(6px, env(safe-area-inset-left, 0px)) env(safe-area-inset-bottom, 0px) max(6px, env(safe-area-inset-right, 0px));
+                background: color-mix(in srgb, var(--card) 86%, transparent); -webkit-backdrop-filter: saturate(1.8) blur(18px); backdrop-filter: saturate(1.8) blur(18px);
+                border-top: .5px solid var(--sep); }
+            .tabbar button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0; border: 0; background: none;
+                font-size: 10px; font-weight: 500; color: var(--mute); }
+            .tabbar button .ic { width: 24px; height: 24px; }
+            .tabbar button[aria-current="page"] { color: var(--p1); font-weight: 600; }
+            .tabbar button[aria-current="page"] .ic { stroke-width: 2.2; }
+            .tabbar .new .fab { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--p1-fill); color: var(--on-p1);
+                box-shadow: 0 4px 12px color-mix(in srgb, var(--p1-fill) 45%, transparent); transition: transform .12s; }
+            .tabbar .new .fab .ic { width: 24px; height: 24px; stroke-width: 2.4; }
+            .tabbar .new:active .fab { transform: scale(.92); }
+            .tabbar .new[aria-current="page"] .fab { box-shadow: 0 0 0 3px var(--card), 0 0 0 4.5px var(--p1-fill); }
+            /* Die Segmente oben übernimmt am Handy die Leiste unten */
+            #appView > .seg.tabs { display: none; }
+            #appView .wrap, body:has(#appView:not([hidden])) > .wrap { padding-bottom: calc(58px + 28px + env(safe-area-inset-bottom, 0px)); }
+            /* Kontomenü aus der Leiste geöffnet: über der Leiste statt oben */
+            .pm-menu.from-bar { position: fixed; z-index: 40; top: auto; right: 12px; bottom: calc(58px + 8px + env(safe-area-inset-bottom, 0px)); }
+        }
+        @media (prefers-reduced-transparency: reduce) { .tabbar { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; } }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
         @media (prefers-reduced-transparency: reduce) { header { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; } }
     </style>
-<script src="shared/ios-nav.js" defer></script>
+<script src="shared/ios-nav.js" data-bottom="72" defer></script>
 </head>
 <body>
 <!-- Linien-Symbole (gleiche Strichstärke wie im Dashboard, in „Zuhause“ und DailyMind) -->
@@ -405,6 +429,7 @@
     <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
+    <symbol id="i-rewind" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 4v4.5H8M12 7.5V12l3 2"/></symbol>
     <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></symbol>
     <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></symbol>
@@ -623,6 +648,14 @@
             <div id="histList" class="hist"></div>
             <p id="histEmpty" class="card empty" hidden>Noch keine abgeschlossenen Sessions.</p>
         </section>
+        <!-- Untere Tab-Leiste (nur Handy, siehe CSS) -->
+        <nav class="tabbar" aria-label="Navigation">
+            <button type="button" data-bar="dash"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg>Dashboard</button>
+            <button type="button" data-bar="bf"><svg class="ic" aria-hidden="true"><use href="#i-rewind"/></svg>Nachtragen</button>
+            <button type="button" data-bar="add" class="new" aria-label="Eintragen"><span class="fab"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></span></button>
+            <button type="button" data-bar="hist"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>Historie</button>
+            <button type="button" data-bar="me"><svg class="ic" aria-hidden="true"><use href="#i-person"/></svg>Konto</button>
+        </nav>
     </main>
 </div>
 
@@ -1397,7 +1430,8 @@ document.addEventListener('click', e => {
     const ses = e.target.closest('[data-session]'); if (ses) return openDetail(+ses.dataset.session);
     const tab = e.target.closest('[data-tab]'); if (tab) {
         S.tab = tab.dataset.tab;
-        document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b === tab));
+        document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === S.tab));
+        paintBar(S.tab);
         $('#addView').hidden = S.tab !== 'add'; $('#dashView').hidden = S.tab !== 'dash'; $('#histView').hidden = S.tab !== 'hist';
         /* Chart.js misst versteckte Canvas mit 0 px, deshalb nach dem Umschalten neu zeichnen */
         if (S.tab === 'dash' && S.body) render();
@@ -1537,6 +1571,24 @@ function applyTheme(dark, save) {
 }
 applyTheme(isDark(), false);
 $('#themeToggle').onclick = () => applyTheme(!isDark(), true);
+
+/* Untere Tab-Leiste (nur Handy): nutzt die bestehenden Tabs, Nachtragen öffnet die Karte in der Historie */
+function paintBar(key) { document.querySelectorAll('[data-bar]').forEach(b => b.toggleAttribute('aria-current', b.dataset.bar === key)); document.querySelectorAll('[data-bar][aria-current]').forEach(b => b.setAttribute('aria-current', 'page')); }
+$('.tabbar').addEventListener('click', e => {
+    const b = e.target.closest('[data-bar]'); if (!b) return;
+    const k = b.dataset.bar;
+    if (k === 'me') {
+        /* Der Kopf hat backdrop-filter, darin klebt position:fixed am Kopf. Deshalb das Menü kurz an <body> hängen. */
+        e.stopPropagation(); const m = $('#meMenu'); m.classList.add('from-bar'); document.body.appendChild(m); $('#meBtn').click(); return;
+    }
+    $(`.tabs [data-tab="${k === 'bf' ? 'hist' : k}"]`).click();
+    if (k === 'bf') {
+        if (!$('#bfCard').hidden) { $('#bfCard').open = true; $('#bfCard').scrollIntoView({ block: 'start' }); }
+        paintBar('bf');
+    } else window.scrollTo(0, 0);
+});
+$('#meBtn').addEventListener('click', e => { if (e.isTrusted) { const m = $('#meMenu'); m.classList.remove('from-bar'); $('.me').appendChild(m); } }, true);
+paintBar((document.querySelector('.tabs [aria-selected="true"]') || {}).dataset?.tab || 'add');
 
 function closeMenu() { $('#meMenu').hidden = true; $('#meBtn').setAttribute('aria-expanded', 'false'); }
 $('#meBtn').onclick = e => {
