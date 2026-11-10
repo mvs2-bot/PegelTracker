@@ -1,0 +1,274 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   mvs2 UI-Kit · gemeinsames Design-System für alle Webseiten
+   Entwurf v1 (PegelTracker). Vorlage: DrinkLog-Mockup, Muster aus Instagram/Facebook.
+
+   Einbinden:   <link rel="stylesheet" href="shared/ui-kit.css">
+   Pro App nur die Akzent-Tokens in :root überschreiben (siehe „App-Akzent“ unten).
+   Dunkles Design: Klasse .dark an <html> (wie bisher, localStorage 'overall-theme').
+
+   Grundregeln
+   - Karten (.ds-card) auf ruhigem Hintergrund, große Zahlen in Kacheln (.ds-tile)
+   - Genau EIN Haupt-Button pro Ansicht (.ds-btn.primary), gefüllt und mind. 48 px hoch
+   - Touch-Ziele mind. 44 × 44 px
+   - Untere Tab-Leiste (.ds-tabbar) NUR auf dem Handy (< 768 px), am Desktop die obere Navigation (.ds-topnav)
+   - Linien-Symbole aus einem SVG-Sprite (.ds-ic), keine Emojis
+   ───────────────────────────────────────────────────────────────────────────── */
+
+:root {
+    /* Flächen und Schrift */
+    --ds-bg: #f4f5f9; --ds-card: #fff; --ds-well: #f0f1f6; --ds-hover: #e9ebf2; --ds-line: #e6e8ef;
+    --ds-ink: #151a2d; --ds-text: #3a3f53; --ds-mute: #6b7086;
+    /* Haupt-Button (dunkles Marineblau wie in der Vorlage) */
+    --ds-primary: #27325f; --ds-primary-hover: #1e2750; --ds-on-primary: #fff; --ds-primary-soft: #e7eaf6;
+    /* App-Akzent (pro Seite überschreiben) */
+    --ds-accent: #2f6fe4; --ds-accent-soft: #e8f0ff; --ds-on-accent: #fff;
+    /* Status */
+    --ds-ok: #1a7f37; --ds-ok-soft: #e3f4e7; --ds-warn: #a35a00; --ds-warn-soft: #fff1de;
+    --ds-danger: #d92d20; --ds-danger-soft: #fdeceb; --ds-info: #3557c8; --ds-info-soft: #eaeefc;
+    /* Form */
+    --ds-r-xl: 22px; --ds-r: 16px; --ds-r-s: 12px; --ds-r-pill: 999px;
+    --ds-shadow: 0 1px 2px rgba(20, 26, 50, .04), 0 6px 18px rgba(20, 26, 50, .05);
+    --ds-pop: 0 14px 40px rgba(20, 26, 50, .18), 0 0 0 .5px rgba(20, 26, 50, .06);
+    --ds-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --ds-tabbar-h: 64px;
+    color-scheme: light;
+}
+.dark {
+    color-scheme: dark;
+    --ds-bg: #0b0c10; --ds-card: #17181e; --ds-well: #22242c; --ds-hover: #2a2c35; --ds-line: #2c2e37;
+    --ds-ink: #f4f5f8; --ds-text: #d0d2da; --ds-mute: #9a9dab;
+    --ds-primary: #dfe4ff; --ds-primary-hover: #fff; --ds-on-primary: #151a2d; --ds-primary-soft: #262b45;
+    --ds-accent: #6ea0ff; --ds-accent-soft: #1a2640; --ds-on-accent: #0b0c10;
+    --ds-ok: #3ccf6a; --ds-ok-soft: #10281a; --ds-warn: #ffb54a; --ds-warn-soft: #33250c;
+    --ds-danger: #ff6b61; --ds-danger-soft: #3a1513; --ds-info: #8ea6ff; --ds-info-soft: #1d2440;
+    --ds-shadow: none; --ds-pop: 0 18px 48px rgba(0, 0, 0, .6), 0 0 0 .5px rgba(255, 255, 255, .08);
+}
+
+/* ── Basis ── */
+[hidden] { display: none !important; }
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--ds-bg); -webkit-text-size-adjust: 100%; }
+body.ds { margin: 0; min-height: 100vh; font: 15px/1.45 var(--ds-font); color: var(--ds-text); background: var(--ds-bg);
+    -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+.ds h1, .ds h2, .ds h3, .ds p, .ds ul { margin: 0; padding: 0; }
+.ds ul { list-style: none; }
+.ds button, .ds input, .ds select { font: inherit; color: inherit; }
+.ds button { cursor: pointer; }
+.ds :focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+.ds-ic { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.ds-num { font-variant-numeric: tabular-nums; }
+.ds-wrap { max-width: 1080px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-left)) 40px; }
+
+/* Sichtbarkeit nach Gerät */
+@media (max-width: 767.98px) { .ds-desktop-only { display: none !important; } }
+@media (min-width: 768px) { .ds-mobile-only { display: none !important; } }
+
+/* ── Kopf ── */
+/* Desktop: Logo + Titel links, Navigation Mitte, Aktionen rechts. Handy: großer Seitentitel links, max. 2 Symbole rechts */
+.ds-header { position: sticky; top: 0; z-index: 40; padding-top: env(safe-area-inset-top);
+    background: color-mix(in srgb, var(--ds-bg) 84%, transparent); -webkit-backdrop-filter: saturate(1.8) blur(18px); backdrop-filter: saturate(1.8) blur(18px); }
+.ds-header .ds-wrap { display: flex; align-items: center; gap: 12px; min-height: 60px; padding-bottom: 0; }
+.ds-brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.ds-brand img { width: 34px; height: 34px; border-radius: 9px; flex: none; }
+.ds-brand b { font-size: 18px; font-weight: 700; letter-spacing: -.02em; color: var(--ds-ink); }
+.ds-brand small { display: block; font-size: 12px; color: var(--ds-mute); }
+.ds-title { font-size: 24px; font-weight: 750; letter-spacing: -.025em; color: var(--ds-ink); flex: 1; min-width: 0; }
+.ds-title.center { text-align: center; font-size: 17px; font-weight: 650; }
+.ds-actions { display: flex; gap: 6px; align-items: center; flex: none; }
+
+/* Obere Navigation (nur Desktop sinnvoll) */
+.ds-topnav { display: flex; gap: 4px; padding: 4px; border-radius: var(--ds-r-pill); background: var(--ds-card); box-shadow: var(--ds-shadow); }
+.ds-topnav button { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 18px; border: 0; border-radius: var(--ds-r-pill);
+    background: none; font-size: 14px; font-weight: 600; color: var(--ds-text); transition: background .15s, color .15s; }
+.ds-topnav button:hover { background: var(--ds-hover); }
+.ds-topnav button[aria-current="page"] { background: var(--ds-primary); color: var(--ds-on-primary); }
+.ds-topnav .ds-ic { width: 18px; height: 18px; }
+
+/* ── Untere Tab-Leiste (nur Handy) ── */
+/* Wie Instagram: 5 Ziele, Mitte = „Neu“. Zusätzlich kleine Beschriftung, damit jedes Symbol eindeutig ist. */
+.ds-tabbar { display: none; }
+@media (max-width: 767.98px) {
+    .ds-tabbar { position: fixed; z-index: 50; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr);
+        height: calc(var(--ds-tabbar-h) + env(safe-area-inset-bottom)); padding: 6px 6px env(safe-area-inset-bottom);
+        background: color-mix(in srgb, var(--ds-card) 90%, transparent); -webkit-backdrop-filter: saturate(1.8) blur(18px); backdrop-filter: saturate(1.8) blur(18px);
+        border-top: 1px solid var(--ds-line); }
+    .ds-tabbar button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 0; background: none;
+        font-size: 10.5px; font-weight: 600; color: var(--ds-mute); padding: 0; }
+    .ds-tabbar button .ds-ic { width: 25px; height: 25px; }
+    .ds-tabbar button[aria-current="page"] { color: var(--ds-ink); }
+    .ds-tabbar button[aria-current="page"] .ds-ic { stroke-width: 2.4; }
+    .ds-tabbar button[aria-current="page"]::before { content: ""; position: absolute; top: -6px; width: 22px; height: 3px; border-radius: 0 0 3px 3px; background: var(--ds-accent); }
+    /* Mitte: großer runder Plus-Button */
+    .ds-tabbar .ds-tab-new { gap: 0; }
+    .ds-tabbar .ds-tab-new span.fab { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--ds-primary); color: var(--ds-on-primary);
+        box-shadow: 0 6px 16px color-mix(in srgb, var(--ds-primary) 35%, transparent); transform: translateY(-8px); transition: transform .12s; }
+    .ds-tabbar .ds-tab-new span.fab .ds-ic { width: 24px; height: 24px; stroke-width: 2.4; }
+    .ds-tabbar .ds-tab-new:active span.fab { transform: translateY(-8px) scale(.92); }
+    .ds-tabbar .ds-tab-new[aria-current="page"]::before { display: none; }
+    .ds-tabbar .ds-ava { width: 27px; height: 27px; font-size: 11px; }
+    .ds-tabbar button[aria-current="page"] .ds-ava { box-shadow: 0 0 0 2px var(--ds-bg), 0 0 0 4px var(--ds-ink); }
+    body.ds.has-tabbar { padding-bottom: calc(var(--ds-tabbar-h) + env(safe-area-inset-bottom)); }
+}
+
+/* ── Karten ── */
+.ds-card { background: var(--ds-card); border-radius: var(--ds-r-xl); box-shadow: var(--ds-shadow); padding: 16px; }
+.ds-card.flush { padding: 6px 0; }
+.ds-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.ds-card-head h3 { flex: 1; font-size: 16px; font-weight: 700; color: var(--ds-ink); letter-spacing: -.01em; }
+.ds-card-head .meta { font-size: 13px; color: var(--ds-mute); display: inline-flex; align-items: center; gap: 6px; }
+.ds-section { margin: 22px 4px 10px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.ds-section h2 { font-size: 16px; font-weight: 700; color: var(--ds-ink); }
+.ds-section .meta { font-size: 13px; color: var(--ds-mute); }
+.ds-stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+
+/* Kennzahl-Kachel (große Zahl, farbige Fläche) */
+.ds-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ds-tile { position: relative; border-radius: var(--ds-r-xl); padding: 14px 14px 13px; background: var(--ds-accent-soft); color: var(--ds-ink); border: 0; text-align: left; }
+.ds-tile .lbl { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; }
+.ds-tile .lbl .dot { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--ds-card); color: var(--ds-accent); }
+.ds-tile .lbl .dot .ds-ic { width: 17px; height: 17px; stroke-width: 2.2; }
+.ds-tile .val { margin-top: 10px; font-size: 34px; font-weight: 750; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.ds-tile .val small { font-size: 17px; font-weight: 650; margin-left: 2px; letter-spacing: 0; }
+.ds-tile .hint { margin-top: 8px; font-size: 12.5px; color: var(--ds-text); }
+
+/* Fortschritts-Balken */
+.ds-meter { height: 6px; border-radius: 6px; background: color-mix(in srgb, var(--ds-ink) 10%, transparent); overflow: hidden; margin-top: 10px; }
+.ds-meter i { display: block; height: 100%; border-radius: inherit; background: var(--ds-accent); }
+
+/* ── Buttons ── */
+.ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 0; border-radius: var(--ds-r-pill);
+    font-size: 15px; font-weight: 650; text-decoration: none; transition: background .15s, transform .1s, box-shadow .15s; }
+.ds-btn .ds-ic { width: 20px; height: 20px; stroke-width: 2.3; }
+.ds-btn:active { transform: scale(.98); }
+.ds-btn.primary { min-height: 52px; background: var(--ds-primary); color: var(--ds-on-primary); box-shadow: 0 6px 18px color-mix(in srgb, var(--ds-primary) 25%, transparent); }
+.ds-btn.primary:hover { background: var(--ds-primary-hover); }
+.ds-btn.secondary { background: var(--ds-primary-soft); color: var(--ds-primary); }
+.dark .ds-btn.secondary { color: var(--ds-ink); }
+.ds-btn.ghost { background: transparent; color: var(--ds-ink); box-shadow: inset 0 0 0 1.5px var(--ds-line); }
+.ds-btn.danger { background: var(--ds-danger-soft); color: var(--ds-danger); }
+.ds-btn.block { display: flex; width: 100%; }
+.ds-btn:disabled { background: var(--ds-well); color: var(--ds-mute); box-shadow: none; transform: none; cursor: default; }
+.ds-btn .sub { font-size: 12.5px; font-weight: 500; opacity: .8; }
+
+/* Runder Symbol-Button */
+.ds-icon-btn { position: relative; display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--ds-ink); }
+.ds-icon-btn:hover { background: var(--ds-hover); }
+.ds-icon-btn.filled { background: var(--ds-card); box-shadow: var(--ds-shadow); }
+.ds-icon-btn .badge { position: absolute; top: 8px; right: 8px; width: 9px; height: 9px; border-radius: 50%; background: var(--ds-danger); box-shadow: 0 0 0 2px var(--ds-bg); }
+
+/* Sticky Aktionsleiste: Haupt-Button bleibt über der Tab-Leiste im Daumenbereich */
+.ds-sticky-cta { position: sticky; bottom: 0; z-index: 20; margin: 16px -16px 0; padding: 14px 16px 12px;
+    background: linear-gradient(to bottom, transparent, var(--ds-bg) 35%); }
+@media (max-width: 767.98px) { .ds-sticky-cta { bottom: calc(var(--ds-tabbar-h) + env(safe-area-inset-bottom)); } }
+
+/* ── Chips und Segmente ── */
+.ds-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.ds-chips.scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
+.ds-chips.scroll::-webkit-scrollbar { display: none; }
+.ds-chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; min-width: 52px; padding: 0 16px; border: 0; border-radius: var(--ds-r-pill);
+    background: var(--ds-well); color: var(--ds-ink); font-size: 14px; font-weight: 600; white-space: nowrap; flex: none; transition: background .15s, color .15s; }
+.ds-chip:hover { background: var(--ds-hover); }
+.ds-chip[aria-pressed="true"], .ds-chip[aria-selected="true"] { background: var(--ds-primary); color: var(--ds-on-primary); }
+.ds-chip.sm { min-height: 32px; min-width: 0; padding: 0 12px; font-size: 13px; }
+.ds-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
+.ds-seg .ds-chip { width: 100%; }
+
+/* Status-Pille */
+.ds-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: var(--ds-r-pill); font-size: 12px; font-weight: 650; background: var(--ds-well); color: var(--ds-text); }
+.ds-pill.ok { background: var(--ds-ok-soft); color: var(--ds-ok); }
+.ds-pill.warn { background: var(--ds-warn-soft); color: var(--ds-warn); }
+.ds-pill.danger { background: var(--ds-danger-soft); color: var(--ds-danger); }
+.ds-live { width: 8px; height: 8px; border-radius: 50%; background: var(--ds-ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ds-ok) 22%, transparent); flex: none; }
+
+/* ── Listen (wie iOS/Facebook-Einstellungen) ── */
+.ds-list > li + li { border-top: 1px solid var(--ds-line); }
+.ds-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 16px; border: 0; background: none; text-align: left; color: var(--ds-ink); text-decoration: none; }
+button.ds-row:hover, a.ds-row:hover { background: var(--ds-hover); }
+.ds-row .main { flex: 1; min-width: 0; }
+.ds-row .main b { display: block; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-row .main small { display: block; font-size: 13px; color: var(--ds-mute); }
+.ds-row .end { font-size: 14px; color: var(--ds-text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ds-row .chev { width: 18px; height: 18px; color: var(--ds-mute); }
+.ds-row.danger, .ds-row.danger .lead-ic { color: var(--ds-danger); }
+.ds-row .lead-ic { width: 22px; height: 22px; color: var(--ds-ink); }
+.ds-list.compact .ds-row { min-height: 46px; }
+
+/* Rundes Symbol mit Fläche (Getränk, Kategorie …) */
+.ds-thumb { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--ds-accent-soft); color: var(--ds-accent); flex: none; }
+.ds-thumb .ds-ic { width: 21px; height: 21px; }
+
+/* Avatar */
+.ds-ava { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; flex: none;
+    background: linear-gradient(135deg, #ff9a3c, #ff5e62); color: #fff; font-size: 14px; font-weight: 700; }
+.ds-ava.xl { width: 92px; height: 92px; font-size: 34px; }
+.ds-ava img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── Stories-Leiste (Instagram): zuletzt getrunken → 1 Tipp = nochmal eintragen ── */
+.ds-stories { display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding: 2px 16px 4px; }
+.ds-stories::-webkit-scrollbar { display: none; }
+.ds-story { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 66px; flex: none; border: 0; background: none; padding: 0; font-size: 12px; font-weight: 600; color: var(--ds-ink); }
+.ds-story .ring { display: grid; place-items: center; width: 62px; height: 62px; border-radius: 50%; padding: 2.5px;
+    background: conic-gradient(from 200deg, var(--ds-accent), color-mix(in srgb, var(--ds-accent) 40%, #ff5e62), var(--ds-accent)); }
+.ds-story .ring > span { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; background: var(--ds-card); border: 2.5px solid var(--ds-card); color: var(--ds-ink); }
+.ds-story .ring .ds-ic { width: 26px; height: 26px; }
+.ds-story.add .ring { background: var(--ds-line); }
+.ds-story small { display: block; margin-top: -4px; font-size: 11px; font-weight: 500; color: var(--ds-mute); }
+
+/* ── Auswahl-Kacheln (Raster mit Häkchen) ── */
+.ds-picks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.ds-pick { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 96px; padding: 12px 6px;
+    border: 0; border-radius: var(--ds-r); background: var(--ds-well); color: var(--ds-ink); font-size: 13.5px; font-weight: 600; transition: background .15s, box-shadow .15s, transform .1s; }
+.ds-pick:hover { background: var(--ds-hover); }
+.ds-pick:active { transform: scale(.97); }
+.ds-pick .ds-thumb { width: 46px; height: 46px; background: var(--ds-card); }
+.ds-pick .ds-thumb .ds-ic { width: 25px; height: 25px; }
+.ds-pick[aria-pressed="true"] { background: var(--ds-accent-soft); box-shadow: inset 0 0 0 2px var(--ds-accent); }
+.ds-pick[aria-pressed="true"]::after { content: ""; position: absolute; top: 7px; right: 7px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--ds-accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center/12px no-repeat; }
+.ds-pick small { font-size: 11.5px; font-weight: 500; color: var(--ds-mute); margin-top: -6px; }
+
+/* ── Plus/Minus-Stepper ── */
+.ds-stepper { display: inline-flex; align-items: center; gap: 4px; }
+.ds-stepper button { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--ds-line); background: var(--ds-card); color: var(--ds-ink); padding: 0; }
+.ds-stepper button.plus { background: var(--ds-primary); border-color: var(--ds-primary); color: var(--ds-on-primary); }
+.ds-stepper button:disabled { opacity: .35; cursor: default; }
+.ds-stepper button .ds-ic { width: 18px; height: 18px; stroke-width: 2.4; }
+.ds-stepper output { min-width: 22px; text-align: center; font-weight: 700; color: var(--ds-ink); font-variant-numeric: tabular-nums; }
+
+/* ── Schalter ── */
+.ds-switch { position: relative; width: 51px; height: 31px; flex: none; }
+.ds-switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
+.ds-switch span { position: absolute; inset: 0; border-radius: 99px; background: color-mix(in srgb, var(--ds-mute) 35%, transparent); transition: background .2s; }
+.ds-switch span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, .2); transition: transform .2s; }
+.ds-switch input:checked + span { background: var(--ds-ok); }
+.ds-switch input:checked + span::after { transform: translateX(20px); }
+
+/* ── Hinweis-Box ── */
+.ds-note { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: var(--ds-r); background: var(--ds-info-soft); color: var(--ds-ink); font-size: 13.5px; }
+.ds-note .ds-ic { color: var(--ds-info); width: 20px; height: 20px; margin-top: 1px; }
+.ds-note button { border: 0; background: none; padding: 0; color: var(--ds-info); font-weight: 650; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Leerer Zustand / Hero-Karte */
+.ds-hero { text-align: center; padding: 22px 18px; }
+.ds-hero .ds-thumb { width: 56px; height: 56px; margin: 0 auto 12px; background: var(--ds-accent-soft); }
+.ds-hero .ds-thumb .ds-ic { width: 28px; height: 28px; }
+.ds-hero h2 { font-size: 19px; font-weight: 750; color: var(--ds-ink); letter-spacing: -.02em; }
+.ds-hero p { margin-top: 6px; font-size: 14px; color: var(--ds-mute); }
+
+/* ── Snackbar mit „Rückgängig“ ── */
+.ds-toast { position: fixed; z-index: 60; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    display: flex; align-items: center; gap: 14px; max-width: calc(100vw - 32px); padding: 10px 10px 10px 16px; border-radius: 14px;
+    background: #1d2033; color: #fff; font-size: 14px; font-weight: 500; box-shadow: var(--ds-pop); transition: opacity .2s, transform .2s; }
+.dark .ds-toast { background: #f4f5f8; color: #151a2d; }
+.ds-toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.ds-toast .ds-ic { width: 20px; height: 20px; color: #3ccf6a; }
+.ds-toast button { border: 0; border-radius: 10px; padding: 8px 12px; background: rgba(255, 255, 255, .14); color: inherit; font-weight: 700; }
+.dark .ds-toast button { background: rgba(0, 0, 0, .08); }
+@media (max-width: 767.98px) { .ds-toast { bottom: calc(var(--ds-tabbar-h) + env(safe-area-inset-bottom) + 12px); } }
+
+/* ── Popover-Menü (Konto am Desktop) ── */
+.ds-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 45; width: 280px; padding: 6px; border-radius: 16px; background: var(--ds-card); box-shadow: var(--ds-pop); }
+.ds-menu .ds-row { min-height: 44px; border-radius: 10px; padding: 8px 10px; font-size: 14px; }
+
+/* Bewegung reduzieren */
+@media (prefers-reduced-motion: reduce) { .ds *, .ds *::before, .ds *::after { transition: none !important; animation: none !important; } }
