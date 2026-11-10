@@ -405,6 +405,8 @@
             .tabbar .new[aria-current="page"] .fab { box-shadow: 0 0 0 3px var(--card), 0 0 0 4.5px var(--p1-fill); }
             /* Die Segmente oben übernimmt am Handy die Leiste unten */
             #appView > .seg.tabs { display: none; }
+            /* ohne die Segmente fehlt sonst der Abstand zwischen Kopf und erster Karte */
+            header + .wrap { padding-top: 12px; }
             #appView .wrap, body:has(#appView:not([hidden])) > .wrap { padding-bottom: calc(58px + 28px + env(safe-area-inset-bottom, 0px)); }
             /* Profilbild oben weg, dafür unten in der Leiste */
             #meBtn { display: none; }
@@ -1143,7 +1145,8 @@ function render() {
     const now = Date.now();
     const s = activeSession(now);
     const me = viewPerson();
-    $('#subline').textContent = viewingSelf() ? 'Mein Bereich' : `Bereich von ${me ? me.display_name : '…'}`;
+    /* Untertitel bleibt der App-Slogan; nur wenn ein Admin fremde Daten ansieht, steht dort wessen Bereich */
+    $('#subline').textContent = viewingSelf() ? 'Promille & Koffein im Blick' : `Bereich von ${me ? me.display_name : '…'}`;
     $('#entryCard').hidden = !viewingSelf();
     $('#bfCard').hidden = $('#bfDayCard').hidden = !viewingSelf();
     $('#bfRo').hidden = viewingSelf();
