@@ -19,7 +19,7 @@
         /* Apple-Designsprache wie im Dashboard (mvs2-bot.github.io), „Zuhause“ und DailyMind.
            Eigener Akzent: Gold (wie ein volles Glas). Text und Symbole im dunkleren Gold, Flächen in hellem Gold mit dunkler Schrift. Koffein in Braun, Pegelstufen von Grün bis Rot. */
         :root {
-            --add-tint: 16%; --bg: #f2f2f7; --card: #fff; --well: #f2f2f7; --hover: #e9e9ef; --line: #e2e2e7; --sep: rgba(60, 60, 67, .14);
+            --add-tint: 16%; --tabbar-bg: #fff; --bg: #f2f2f7; --card: #fff; --well: #f2f2f7; --hover: #e9e9ef; --line: #e2e2e7; --sep: rgba(60, 60, 67, .14);
             --ink: #1c1c1e; --text: #3a3a3c; --mute: #6c6c70;
             --p1: #b45309; --p1-fill: #f2b445; --p1-soft: #fdf0e1; --on-p1: #1c1c1e;
             --caf: #8a5a2b; --caf-soft: #f6ede3;
@@ -34,7 +34,7 @@
             color-scheme: light;
         }
         .dark {
-            color-scheme: dark; --add-tint: 26%; --bg: #000; --card: #1c1c1e; --well: #2c2c2e; --hover: #3a3a3c; --line: #38383a; --sep: rgba(84, 84, 88, .55);
+            color-scheme: dark; --add-tint: 26%; --tabbar-bg: #2c2c2e; --bg: #000; --card: #1c1c1e; --well: #2c2c2e; --hover: #3a3a3c; --line: #38383a; --sep: rgba(84, 84, 88, .55);
             --ink: #f5f5f7; --text: #d1d1d6; --mute: #98989f;
             --p1: #f5b445; --p1-fill: #f5b445; --p1-soft: #2e1f08; --on-p1: #1c1c1e;
             --caf: #d4a373; --caf-soft: #2e2216;
@@ -435,12 +435,14 @@
         /* Untere Tab-Leiste: NUR auf dem Handy (< 768 px). Am Desktop bleibt die Bedienung wie bisher (Segmente oben). */
         .tabbar { display: none; }
         @media (max-width: 767.98px) {
-            .tabbar { position: fixed; z-index: 35; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr);
-                height: calc(58px + env(safe-area-inset-bottom, 0px)); padding: 4px max(6px, env(safe-area-inset-left, 0px)) env(safe-area-inset-bottom, 0px) max(6px, env(safe-area-inset-right, 0px));
-                background: color-mix(in srgb, var(--card) 86%, transparent); -webkit-backdrop-filter: saturate(1.8) blur(18px); backdrop-filter: saturate(1.8) blur(18px);
-                border-top: .5px solid var(--sep); }
-            .tabbar button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0; border: 0; background: none;
-                font-size: 10px; font-weight: 500; color: var(--mute); }
+            /* Schwebende Leiste: abgerundete Karte, leicht über dem unteren Rand */
+            .tabbar { position: fixed; z-index: 35; left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
+                bottom: calc(10px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: repeat(5, 1fr);
+                height: 62px; padding: 0 4px; border-radius: 22px; background: var(--tabbar-bg);
+                box-shadow: 0 8px 28px rgba(0, 0, 0, .16); }
+            .tabbar button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0; border: 0; background: none; isolation: isolate;
+                font-size: 10px; font-weight: 500; color: var(--ink); }
+            .tabbar button:not(.new)[aria-current="page"]::before { content: ""; position: absolute; inset: 7px 6px; z-index: -1; border-radius: 16px; background: var(--p1-soft); }
             .tabbar button .ic { width: 24px; height: 24px; }
             .tabbar button[aria-current="page"] { color: var(--p1); font-weight: 600; }
             .tabbar button[aria-current="page"] .ic { stroke-width: 2.2; }
@@ -453,22 +455,21 @@
             #appView > .seg.tabs { display: none; }
             /* ohne die Segmente fehlt sonst der Abstand zwischen Kopf und erster Karte */
             header + .wrap { padding-top: 12px; }
-            #appView .wrap, body:has(#appView:not([hidden])) > .wrap { padding-bottom: calc(58px + 28px + env(safe-area-inset-bottom, 0px)); }
+            #appView .wrap, body:has(#appView:not([hidden])) > .wrap { padding-bottom: calc(62px + 36px + env(safe-area-inset-bottom, 0px)); }
             /* Profilbild oben weg, dafür unten in der Leiste */
             #meBtn, #themeToggle { display: none; }
             .tabbar .bar-ava { width: 26px; height: 26px; flex: 0 0 26px; font-size: 11px; }
-            .tabbar [aria-current="page"] .bar-ava { box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--p1); }
+            .tabbar [aria-current="page"] .bar-ava { box-shadow: 0 0 0 2px var(--p1-soft), 0 0 0 3.5px var(--p1); }
             /* Eintragen (Plus) mit leicht goldenem Hintergrund, damit klar ist: hier kommt etwas Neues dazu */
             body.adding, body.adding header { background: color-mix(in srgb, var(--p1-fill) var(--add-tint), var(--bg)); }
             body.adding header { background: color-mix(in srgb, color-mix(in srgb, var(--p1-fill) var(--add-tint), var(--bg)) 82%, transparent); }
             /* Eintragen-Karte zusätzlich mit feinem Goldrand, damit sie auch im Dunkeln klar als „neu“ erkennbar ist */
             body.adding #entryCard { outline: 1.5px solid color-mix(in srgb, var(--p1-fill) 55%, transparent); outline-offset: -1.5px; }
         }
-        @media (prefers-reduced-transparency: reduce) { .tabbar { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; } }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
         @media (prefers-reduced-transparency: reduce) { header { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; } }
     </style>
-<script src="shared/ios-nav.js" data-bottom="72" defer></script>
+<script src="shared/ios-nav.js" data-bottom="84" defer></script>
 </head>
 <body>
 <!-- Linien-Symbole (gleiche Strichstärke wie im Dashboard, in „Zuhause“ und DailyMind) -->
