@@ -303,9 +303,20 @@
         .wp-cell:disabled { opacity: .35; cursor: default; }
         /* Profil-Seite (Handy): Kontomenü als Karte */
         .pm-menu.as-page { position: static; width: auto; max-width: none; padding: 8px; border-radius: var(--radius); box-shadow: var(--shadow); }
-        .pm-menu.as-page .pm-head { padding: 10px 10px 14px; }
-        .pm-menu.as-page .pm-ava { flex-basis: 56px; width: 56px; height: 56px; font-size: 20px; }
-        .pm-menu.as-page .pm-head b { font-size: 17px; }
+        /* Profil-Seite: Bild groß und mittig, Name darunter */
+        .pm-menu.as-page .pm-head { flex-direction: column; text-align: center; gap: 10px; padding: 18px 10px 16px; }
+        .pm-menu.as-page .pm-head > div { width: 100%; }
+        .pm-menu.as-page .pm-ava { flex: none; width: 96px; height: 96px; font-size: 34px; box-shadow: 0 0 0 3px var(--card), 0 0 0 5px var(--p1-fill); }
+        .pm-menu.as-page .pm-head b { font-size: 19px; }
+        .pm-menu.as-page .pm-head small { margin-top: 2px; }
+        .pm-menu.as-page .pm-role { margin-top: 8px; }
+        /* Hell/Dunkel nur auf der Profil-Seite (Handy); am Desktop bleibt der Knopf oben */
+        .pm-theme { display: none; }
+        .pm-menu.as-page .pm-theme { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 4px 4px 4px 10px; font-size: 15px; font-weight: 500; color: var(--ink); }
+        .pm-theme .ic { width: 18px; height: 18px; color: var(--mute); flex: none; }
+        .pm-seg { margin-left: auto; display: inline-flex; padding: 2px; border-radius: 9px; background: var(--well); }
+        .pm-seg button { min-height: 30px; padding: 0 14px; border: 0; border-radius: 7px; background: none; color: var(--mute); font-size: 13px; font-weight: 500; }
+        .pm-seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
         .pm-menu.as-page .pm-item { min-height: 48px; font-size: 15px; }
         /* Eintragen */
         .narrow { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
@@ -425,7 +436,7 @@
             header + .wrap { padding-top: 12px; }
             #appView .wrap, body:has(#appView:not([hidden])) > .wrap { padding-bottom: calc(58px + 28px + env(safe-area-inset-bottom, 0px)); }
             /* Profilbild oben weg, dafür unten in der Leiste */
-            #meBtn { display: none; }
+            #meBtn, #themeToggle { display: none; }
             .tabbar .bar-ava { width: 26px; height: 26px; flex: 0 0 26px; font-size: 11px; }
             .tabbar [aria-current="page"] .bar-ava { box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--p1); }
             /* Eintragen (Plus) mit leicht goldenem Hintergrund, damit klar ist: hier kommt etwas Neues dazu */
@@ -492,6 +503,8 @@
                         <span id="menuAva" class="pm-ava"></span>
                         <div><b id="menuName"></b><small id="menuMail"></small><span id="menuRole" class="pm-role" hidden></span></div>
                     </div>
+                    <div class="pm-theme" role="group" aria-label="Darstellung"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg>Darstellung
+                        <span class="pm-seg"><button type="button" data-theme="light">Hell</button><button type="button" data-theme="dark">Dunkel</button></span></div>
                     <div id="menuSync" class="pm-sync" role="status" hidden><i></i><span><b>Cloud-Sync</b> · <span></span></span></div>
                     <label id="personRow" class="pm-view" hidden><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg>Bereich ansehen
                         <select id="personSel" class="hdr-sel" aria-label="Bereich wählen"></select></label>
@@ -1612,12 +1625,14 @@ function applyTheme(dark, save) {
     document.documentElement.classList.toggle('dark', dark);
     $('#themeToggle').innerHTML = ic(dark ? 'sun' : 'moon');
     $('#themeToggle').setAttribute('aria-label', dark ? 'Zum hellen Modus wechseln' : 'Zum dunklen Modus wechseln');
+    document.querySelectorAll('[data-theme]').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.theme === 'dark') === dark)));
     document.querySelector('meta[name="theme-color"]').content = dark ? '#000000' : '#f2f2f7';
     if (save) { try { localStorage.setItem('overall-theme', dark ? 'dark' : 'light'); } catch (e) {} }
     if (S.user && S.body) render();
 }
 applyTheme(isDark(), false);
 $('#themeToggle').onclick = () => applyTheme(!isDark(), true);
+document.querySelectorAll('[data-theme]').forEach(b => b.onclick = () => applyTheme(b.dataset.theme === 'dark', true));
 
 /* ═════════ Bereiche ═════════
    Desktop: Segmente oben (Eintragen, Nachtragen, Dashboard, Historie), Kontomenü als Pop-up.
