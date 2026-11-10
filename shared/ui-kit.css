@@ -1,0 +1,263 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   mvs2 UI-Kit · gemeinsames Design-System für alle Webseiten
+   Entwurf v2 (PegelTracker).
+
+   Die Designsprache bleibt die bisherige (Apple-Stil wie Dashboard, „Zuhause“, DailyMind, PegelTracker):
+   Systemschrift (SF), Schriften 12–22 px (Basis 14 px), Überschriften 15 px/600, kleine Labels 12 px/500,
+   weiße Karten (Radius 18 px, Innenabstand 16 px) auf #f2f2f7, Abstände 14 px, Linien-Symbole.
+   NEU sind nur die Anordnung und einige Bausteine: Tab-Leiste unten am Handy, Kennzahl-Kacheln,
+   Auswahl-Raster, Stories-Leiste, Plus/Minus-Zähler, fixierter Haupt-Button, Snackbar mit Rückgängig.
+
+   Einbinden:   <link rel="stylesheet" href="shared/ui-kit.css">   und   <body class="ds has-tabbar">
+   Pro App nur den Akzent überschreiben (--ds-accent, --ds-accent-fill, --ds-accent-soft, --ds-on-accent).
+   Dunkles Design: Klasse .dark an <html> (wie bisher, localStorage 'overall-theme').
+   ───────────────────────────────────────────────────────────────────────────── */
+
+:root {
+    --ds-bg: #f2f2f7; --ds-card: #fff; --ds-well: #f2f2f7; --ds-hover: #e9e9ef; --ds-line: #e2e2e7; --ds-sep: rgba(60, 60, 67, .14);
+    --ds-ink: #1c1c1e; --ds-text: #3a3a3c; --ds-mute: #6c6c70;
+    /* App-Akzent: Text/Symbole, gefüllte Fläche, zarte Fläche, Schrift auf der Fläche (Standard: PegelTracker-Gold) */
+    --ds-accent: #b45309; --ds-accent-fill: #f2b445; --ds-accent-soft: #fdf0e1; --ds-on-accent: #1c1c1e;
+    --ds-ok: #1d7a34; --ds-ok-soft: #e5f4e8; --ds-warn: #9a5b00; --ds-warn-soft: #fff1e0; --ds-danger: #d70015; --ds-danger-soft: #ffe6e8;
+    --ds-radius: 18px; --ds-radius-s: 12px;
+    --ds-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 4px 14px rgba(0, 0, 0, .04);
+    --ds-pop: 0 12px 40px rgba(0, 0, 0, .18), 0 0 0 .5px rgba(0, 0, 0, .06);
+    --ds-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --ds-tabbar-h: 58px;
+    color-scheme: light;
+}
+.dark {
+    color-scheme: dark;
+    --ds-bg: #000; --ds-card: #1c1c1e; --ds-well: #2c2c2e; --ds-hover: #3a3a3c; --ds-line: #38383a; --ds-sep: rgba(84, 84, 88, .55);
+    --ds-ink: #f5f5f7; --ds-text: #d1d1d6; --ds-mute: #98989f;
+    --ds-accent: #f5b445; --ds-accent-fill: #f5b445; --ds-accent-soft: #2e1f08; --ds-on-accent: #1c1c1e;
+    --ds-ok: #30d158; --ds-ok-soft: #0f2a16; --ds-warn: #ffb340; --ds-warn-soft: #33240b; --ds-danger: #ff6961; --ds-danger-soft: #3a1412;
+    --ds-shadow: none; --ds-pop: 0 16px 48px rgba(0, 0, 0, .6), 0 0 0 .5px rgba(255, 255, 255, .08);
+}
+
+/* ── Basis (wie bisher) ── */
+[hidden] { display: none !important; }
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--ds-bg); -webkit-text-size-adjust: 100%; }
+body.ds { margin: 0; min-height: 100vh; font-family: var(--ds-font); font-size: 14px; line-height: 1.45; letter-spacing: -.005em; color: var(--ds-text); background: var(--ds-bg);
+    -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+.ds h1, .ds h2, .ds h3, .ds p, .ds ul { margin: 0; padding: 0; }
+.ds ul { list-style: none; }
+.ds button, .ds input, .ds select { font: inherit; color: inherit; }
+.ds button { cursor: pointer; }
+.ds :focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+.ds-ic { width: 1.25em; height: 1.25em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ds-num { font-variant-numeric: tabular-nums; }
+.ds-wrap { max-width: 1040px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(48px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.ds-eyebrow { font-size: 12px; font-weight: 500; color: var(--ds-mute); }
+.ds-hint { font-size: 12px; color: var(--ds-mute); }
+
+/* Sichtbarkeit nach Gerät */
+@media (max-width: 767.98px) { .ds-desktop-only { display: none !important; } }
+@media (min-width: 768px) { .ds-mobile-only { display: none !important; } }
+
+/* ── Kopf: bleibt überall oben fixiert (wie bisher) ── */
+.ds-header { position: sticky; top: 0; z-index: 40; padding-top: env(safe-area-inset-top, 0px);
+    background: color-mix(in srgb, var(--ds-bg) 82%, transparent); -webkit-backdrop-filter: saturate(1.8) blur(18px); backdrop-filter: saturate(1.8) blur(18px); }
+.ds-header .ds-wrap { padding-bottom: 0; }
+.ds-bar { display: flex; align-items: center; gap: 12px; padding-block: 12px 10px; }
+.ds-bar .logo { width: 36px; height: 36px; flex: none; border-radius: 9px; }
+.ds-bar .head { flex: 1; min-width: 0; }
+.ds-bar h1 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: var(--ds-ink); line-height: 1.15; }
+.ds-bar .sub { font-size: 12px; font-weight: 500; color: var(--ds-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+@media (prefers-reduced-transparency: reduce) { .ds-header, .ds-tabbar { background: var(--ds-bg); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* Runder Symbol-Button (wie bisher .icon-btn) */
+.ds-icon-btn { position: relative; overflow: hidden; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: var(--ds-card); color: var(--ds-ink); box-shadow: var(--ds-shadow);
+    display: inline-grid; place-items: center; transition: background .15s; }
+.ds-icon-btn:hover { background: var(--ds-hover); }
+.ds-icon-btn .ds-ic { width: 18px; height: 18px; }
+.ds-icon-btn.plain { background: none; box-shadow: none; color: var(--ds-mute); width: 34px; height: 34px; }
+.ds-icon-btn.plain:hover { background: var(--ds-hover); color: var(--ds-ink); }
+
+/* ── Segmente wie in iOS: Desktop-Navigation (wie bisher) und Umschalter ── */
+.ds-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: color-mix(in srgb, var(--ds-mute) 14%, transparent); border-radius: 9px; padding: 2px; gap: 2px; }
+.ds-seg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; background: none; border-radius: 7px; padding: 6px 12px; min-height: 32px;
+    font-size: 13px; font-weight: 500; color: var(--ds-ink); transition: background .15s; }
+.ds-seg button[aria-selected="true"], .ds-seg button[aria-pressed="true"], .ds-seg button[aria-current="page"] { background: var(--ds-card); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); font-weight: 600; }
+.dark .ds-seg button[aria-selected="true"], .dark .ds-seg button[aria-pressed="true"], .dark .ds-seg button[aria-current="page"] { background: #636366; }
+.ds-seg .ds-ic { width: 15px; height: 15px; }
+.ds-tabs { max-width: 420px; margin: 8px auto 18px; }
+
+/* ── Untere Tab-Leiste: NUR Handy (< 768 px) ── */
+/* Wie Instagram: 5 Ziele, Mitte = „Neu“. Mit kurzer Beschriftung unter jedem Symbol. */
+.ds-tabbar { display: none; }
+@media (max-width: 767.98px) {
+    .ds-tabbar { position: fixed; z-index: 50; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr);
+        height: calc(var(--ds-tabbar-h) + env(safe-area-inset-bottom, 0px)); padding: 4px max(6px, env(safe-area-inset-left, 0px)) env(safe-area-inset-bottom, 0px);
+        background: color-mix(in srgb, var(--ds-card) 86%, transparent); -webkit-backdrop-filter: saturate(1.8) blur(18px); backdrop-filter: saturate(1.8) blur(18px);
+        border-top: .5px solid var(--ds-sep); }
+    .ds-tabbar button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0; border: 0; background: none;
+        font-size: 10px; font-weight: 500; color: var(--ds-mute); }
+    .ds-tabbar button .ds-ic { width: 24px; height: 24px; }
+    .ds-tabbar button[aria-current="page"] { color: var(--ds-accent); font-weight: 600; }
+    .ds-tabbar button[aria-current="page"] .ds-ic { stroke-width: 2.2; }
+    /* Mitte: runder Plus-Button in der Akzentfläche */
+    .ds-tabbar .ds-tab-new .fab { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--ds-accent-fill); color: var(--ds-on-accent);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--ds-accent-fill) 45%, transparent); transition: transform .12s; }
+    .ds-tabbar .ds-tab-new .fab .ds-ic { width: 24px; height: 24px; stroke-width: 2.4; }
+    .ds-tabbar .ds-tab-new:active .fab { transform: scale(.92); }
+    .ds-tabbar .ds-ava { width: 26px; height: 26px; flex-basis: 26px; font-size: 11px; }
+    .ds-tabbar button[aria-current="page"] .ds-ava { box-shadow: 0 0 0 2px var(--ds-card), 0 0 0 3.5px var(--ds-accent); }
+    body.ds.has-tabbar > .ds-wrap { padding-bottom: calc(var(--ds-tabbar-h) + 24px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ── Karten (wie bisher) ── */
+.ds-card { background: var(--ds-card); border-radius: var(--ds-radius); box-shadow: var(--ds-shadow); padding: 16px; }
+.ds-card h2, .ds-card h3 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: var(--ds-ink); line-height: 1.3; }
+.ds-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.ds-card-head h3 { flex: 1; min-width: 0; }
+.ds-badge { flex: none; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--ds-accent-soft); color: var(--ds-accent); }
+.ds-badge .ds-ic { width: 16px; height: 16px; }
+.ds-stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; }
+
+/* Kennzahl-Kachel: große Zahl auf zarter Akzentfläche */
+.ds-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.ds-tile { display: block; width: 100%; border: 0; border-radius: var(--ds-radius); padding: 14px 16px; background: var(--ds-accent-soft); color: var(--ds-ink); text-align: left; }
+.ds-tile .lbl { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: var(--ds-text); }
+.ds-tile .lbl .ds-ic { width: 16px; height: 16px; color: var(--ds-accent); }
+.ds-tile .val { margin-top: 6px; font-size: 34px; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.ds-tile .val small { margin-left: 4px; font-size: 20px; font-weight: 500; color: var(--ds-mute); letter-spacing: 0; }
+.ds-tile .foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; color: var(--ds-mute); }
+.ds-meter { height: 4px; margin-top: 10px; border-radius: 4px; background: color-mix(in srgb, var(--ds-ink) 10%, transparent); overflow: hidden; }
+.ds-meter i { display: block; height: 100%; border-radius: inherit; background: var(--ds-accent); }
+
+/* ── Buttons ── */
+/* Haupt-Button: genau einer pro Ansicht, volle Breite, Akzentfläche mit dunkler Schrift (wie bisher .btn-add) */
+.ds-btn-main { display: flex; width: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 52px; padding: 8px 16px; border: 0; border-radius: 14px;
+    background: var(--ds-accent-fill); color: var(--ds-on-accent); font-size: 15px; font-weight: 600; text-decoration: none; transition: filter .15s, transform .1s; }
+.ds-btn-main .m { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+.ds-btn-main .ds-ic { width: 18px; height: 18px; stroke-width: 2.2; }
+.ds-btn-main .s { font-size: 12px; font-weight: 500; opacity: .85; }
+.ds-btn-main:hover { filter: brightness(1.06); }
+.ds-btn-main:active { transform: scale(.98); }
+.ds-btn-main:disabled { background: var(--ds-well); color: var(--ds-mute); filter: none; transform: none; cursor: default; }
+/* Normaler Button (wie bisher .btn) */
+.ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 16px; border: 0; border-radius: 12px;
+    background: var(--ds-accent-fill); color: var(--ds-on-accent); font-size: 14px; font-weight: 600; text-decoration: none; transition: filter .15s; }
+.ds-btn:hover { filter: brightness(1.06); }
+.ds-btn.ghost { background: var(--ds-well); color: var(--ds-ink); }
+.ds-btn:disabled { opacity: .5; }
+
+/* Haupt-Button bleibt im Daumenbereich, über der Tab-Leiste */
+.ds-sticky-cta { position: sticky; bottom: 0; z-index: 20; margin: 0 -16px; padding: 12px 16px 14px; background: linear-gradient(to bottom, transparent, var(--ds-bg) 40%); }
+@media (max-width: 767.98px) { .ds-sticky-cta { bottom: calc(var(--ds-tabbar-h) + env(safe-area-inset-bottom, 0px)); } }
+
+/* ── Chips ── */
+/* Kleine Pillen (wie bisher .wp-chip): Zeitraum, Zeitpunkt, Menge */
+.ds-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ds-chips.scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.ds-chips.scroll::-webkit-scrollbar { display: none; }
+.ds-chip { flex: none; min-height: 32px; padding: 4px 14px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--ds-mute) 14%, transparent); color: var(--ds-ink);
+    font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 5px; transition: background .15s; }
+.ds-chip:hover { background: color-mix(in srgb, var(--ds-mute) 24%, transparent); }
+.ds-chip .ds-ic { width: 15px; height: 15px; }
+.ds-chip[aria-pressed="true"], .ds-chip[aria-selected="true"] { background: var(--ds-accent-fill); color: var(--ds-on-accent); font-weight: 600; }
+.ds-chip:disabled { opacity: .4; cursor: default; }
+
+/* Status-Pille (wie bisher .pill) */
+.ds-pill { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; background: color-mix(in srgb, var(--ds-mute) 16%, transparent); color: var(--ds-text); }
+.ds-pill.ok { background: var(--ds-ok-soft); color: var(--ds-ok); }
+.ds-pill.warn { background: var(--ds-warn-soft); color: var(--ds-warn); }
+.ds-pill.danger { background: var(--ds-danger-soft); color: var(--ds-danger); }
+.ds-pill.accent { background: var(--ds-accent-soft); color: var(--ds-accent); font-weight: 600; }
+.ds-live { width: 8px; height: 8px; border-radius: 50%; background: var(--ds-ok); flex: none; }
+
+/* ── Listen (wie bisher .drinks) ── */
+.ds-list > li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--ds-sep); }
+.ds-list > li:first-child { border-top: 0; }
+.ds-list .main { flex: 1; min-width: 0; }
+.ds-list .main b { display: block; font-size: 14px; font-weight: 600; color: var(--ds-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-list .main small { display: block; font-size: 12px; color: var(--ds-mute); }
+.ds-list .end { flex: none; font-size: 13px; font-weight: 500; color: var(--ds-mute); font-variant-numeric: tabular-nums; }
+.ds-list .chev { width: 16px; height: 16px; color: var(--ds-mute); }
+/* Menüzeilen (Profil, Kontomenü; wie bisher .pm-item) */
+.ds-item { display: flex; width: 100%; align-items: center; gap: 10px; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 10px; background: none;
+    color: var(--ds-ink); font-size: 14px; font-weight: 500; text-align: left; text-decoration: none; }
+.ds-item:hover, .ds-item:focus-visible { background: var(--ds-hover); outline: none; }
+.ds-item > .ds-ic { width: 18px; height: 18px; color: var(--ds-mute); }
+.ds-item .grow { flex: 1; min-width: 0; }
+.ds-item .chev { width: 14px; height: 14px; color: var(--ds-mute); }
+.ds-item small { margin-left: auto; font-size: 11px; color: var(--ds-mute); }
+.ds-item.danger, .ds-item.danger > .ds-ic { color: var(--ds-danger); }
+.ds-sep { height: 1px; margin: 4px 6px; background: var(--ds-sep); }
+
+/* Rundes Symbol mit Fläche (Getränk, Kategorie …) */
+.ds-thumb { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--ds-accent-soft); color: var(--ds-accent); flex: none; }
+.ds-thumb .ds-ic { width: 19px; height: 19px; }
+
+/* Avatar */
+.ds-ava { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; flex: none; background: #8e6bbf; color: #fff; font-size: 14px; font-weight: 600; }
+.ds-ava.xl { width: 80px; height: 80px; font-size: 30px; }
+.ds-ava img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── Stories-Leiste (Instagram): zuletzt getrunken → 1 Tipp = nochmal eintragen ── */
+.ds-stories { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding: 2px 16px; }
+.ds-stories::-webkit-scrollbar { display: none; }
+.ds-story { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 60px; flex: none; padding: 0; border: 0; background: none; font-size: 12px; font-weight: 500; color: var(--ds-ink); }
+.ds-story .ring { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; padding: 2px; background: var(--ds-accent); }
+.ds-story .ring > span { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; background: var(--ds-accent-soft); border: 2px solid var(--ds-card); color: var(--ds-accent); }
+.ds-story .ring .ds-ic { width: 24px; height: 24px; }
+.ds-story.add .ring { background: var(--ds-line); }
+.ds-story.add .ring > span { background: var(--ds-well); color: var(--ds-mute); }
+.ds-story small { margin-top: -3px; font-size: 11px; color: var(--ds-mute); }
+
+/* ── Auswahl-Raster (wie bisher .chip in .q3, mit Häkchen) ── */
+.ds-picks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ds-pick { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 76px; padding: 10px 4px; border: 0;
+    border-radius: var(--ds-radius-s); background: var(--ds-well); color: var(--ds-ink); font-size: 13px; font-weight: 600; text-align: center; transition: background .15s, box-shadow .15s; }
+.ds-pick:hover { background: var(--ds-hover); }
+.ds-pick > .ds-ic { width: 26px; height: 26px; color: var(--ds-accent); }
+.ds-pick small { margin-top: -4px; font-size: 12px; font-weight: 500; color: var(--ds-mute); }
+.ds-pick[aria-pressed="true"] { background: var(--ds-accent-soft); box-shadow: inset 0 0 0 1.5px var(--ds-accent); }
+.ds-pick[aria-pressed="true"]::after { content: ""; position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--ds-accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center/11px no-repeat; }
+
+/* ── Plus/Minus-Zähler ── */
+.ds-stepper { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.ds-stepper button { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: var(--ds-well); color: var(--ds-ink); }
+.ds-stepper button.plus { background: var(--ds-accent-fill); color: var(--ds-on-accent); }
+.ds-stepper button:disabled { opacity: .35; cursor: default; }
+.ds-stepper button .ds-ic { width: 16px; height: 16px; stroke-width: 2.4; }
+.ds-stepper output { min-width: 18px; text-align: center; font-size: 15px; font-weight: 600; color: var(--ds-ink); font-variant-numeric: tabular-nums; }
+
+/* ── Schalter-Zeile (wie bisher .toggle/.switch) ── */
+.ds-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: var(--ds-radius-s); background: var(--ds-well); cursor: pointer; }
+.ds-toggle .t { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; color: var(--ds-ink); }
+.ds-toggle .t .ds-ic { width: 18px; height: 18px; color: var(--ds-mute); }
+.ds-switch { position: relative; flex: none; width: 51px; height: 31px; }
+.ds-switch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; z-index: 1; }
+.ds-switch span { position: absolute; inset: 0; border-radius: 999px; background: color-mix(in srgb, var(--ds-mute) 32%, transparent); transition: background .2s; pointer-events: none; }
+.ds-switch span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .2); transition: transform .2s; }
+.ds-switch input:checked + span { background: var(--ds-ok); }
+.ds-switch input:checked + span::after { transform: translateX(20px); }
+
+/* Hinweis */
+.ds-note { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--ds-radius-s); background: var(--ds-card); box-shadow: var(--ds-shadow); font-size: 13px; color: var(--ds-text); }
+.ds-note .ds-ic { width: 18px; height: 18px; color: var(--ds-accent); margin-top: 1px; }
+.ds-note button { padding: 0; border: 0; background: none; color: var(--ds-accent); font-weight: 600; }
+.ds-note button:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ── Snackbar mit „Rückgängig“ ── */
+.ds-toast { position: fixed; z-index: 60; left: 50%; bottom: 24px; transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
+    display: flex; align-items: center; gap: 12px; max-width: calc(100vw - 32px); padding: 8px 8px 8px 14px; border-radius: 14px;
+    background: #2c2c2e; color: #fff; font-size: 14px; font-weight: 500; box-shadow: var(--ds-pop); transition: opacity .2s, transform .2s; }
+.ds-toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.ds-toast .ds-ic { width: 18px; height: 18px; color: #30d158; }
+.ds-toast button { padding: 6px 10px; border: 0; border-radius: 9px; background: rgba(255, 255, 255, .14); color: #f5b445; font-weight: 600; }
+@media (max-width: 767.98px) { .ds-toast { bottom: calc(var(--ds-tabbar-h) + env(safe-area-inset-bottom, 0px) + 12px); } }
+
+/* ── Kontomenü (wie bisher .pm-menu) ── */
+.ds-me { position: relative; }
+.ds-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 45; width: 290px; max-width: calc(100vw - 32px); padding: 6px; border-radius: 14px; background: var(--ds-card); box-shadow: var(--ds-pop); }
+.ds-menu-head { display: flex; gap: 10px; align-items: center; padding: 8px 10px 10px; }
+.ds-menu-head b { display: block; font-size: 14px; font-weight: 600; color: var(--ds-ink); }
+.ds-menu-head small { display: block; font-size: 12px; color: var(--ds-mute); }
+
+@media (prefers-reduced-motion: reduce) { .ds *, .ds *::before, .ds *::after { transition: none !important; animation: none !important; } }

@@ -22,6 +22,12 @@ Linien-Symbole statt Emojis (SVG-Sprite oben im `<body>`). Alle Farben stehen al
 - Pegelstufen `--lv0` … `--lv4` von Grün (nüchtern) bis Rot (ab 1,1 ‰).
 - Bei Änderungen an Dateien die Cache-Version in `sw.js` hochzählen.
 
+### UI-Entwurf (neu)
+
+`entwurf/index.html` zeigt das neue Kartendesign mit Beispieldaten (nichts wird gespeichert): unten eine Tab-Leiste
+nur am Handy, am Desktop die bisherige Navigation oben. Die Bausteine liegen in `shared/ui-kit.css` und sollen für alle
+Webseiten gelten, Beschreibung in `shared/UI-KIT.md`. Screenshots: `docs/entwurf/`.
+
 ## Einrichtung
 
 1. Migration `…_pegeltracker_core` aus `supabase-core` im Core-Projekt einspielen. Registriert die App `pegeltracker`.

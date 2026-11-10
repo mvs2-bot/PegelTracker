@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="de"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#f2f2f7">
+    <script>(function(){try{if(localStorage.getItem('overall-theme')==='dark'){document.documentElement.classList.add('dark');}}catch(e){}})();</script>
+    <title>PegelTracker · UI-Entwurf</title>
+    <link rel="icon" href="../icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../shared/ui-kit.css">
+    <style>
+        /* PegelTracker: Gold für Alkohol (Standard-Akzent im Kit), Braun für Koffein (wie bisher) */
+        :root { --caf: #8a5a2b; --caf-soft: #f6ede3; }
+        .dark { --caf: #d4a373; --caf-soft: #2e2216; }
+        .caf { --ds-accent: var(--caf); --ds-accent-soft: var(--caf-soft); }
+
+        .draft-flag { display: flex; gap: 8px; align-items: center; margin: 0 0 14px; padding: 8px 12px; border-radius: var(--ds-radius-s); background: var(--ds-warn-soft); color: var(--ds-ink); font-size: 12px; }
+        .draft-flag .ds-ic { width: 16px; height: 16px; color: var(--ds-warn); }
+
+        /* Ansichten */
+        #app > section, .hist-grid > section { display: none; }
+        #app[data-view="dash"] > [data-v="dash"], #app[data-view="add"] > [data-v="add"], #app[data-view="profile"] > [data-v="profile"] { display: block; }
+        #app .hist-grid { display: none; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+        #app[data-view="hist"] .hist-grid, #app[data-view="bf"] .hist-grid { display: grid; }
+        #app[data-view="hist"] [data-v="hist"], #app[data-view="bf"] [data-v="bf"] { display: block; }
+        @media (min-width: 768px) {
+            /* Desktop wie bisher: Nachtragen gehört zur Historie (links), Liste rechts */
+            #app[data-view="hist"] [data-v="bf"], #app[data-view="bf"] [data-v="hist"] { display: block; }
+            #app[data-view] .hist-grid { grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 16px; align-items: start; }
+            .hist-grid [data-v="bf"] { position: sticky; top: 76px; }
+        }
+        @media (max-width: 767.98px) { .ds-header .ds-bar { padding-bottom: 8px; } main { padding-top: 6px; } }
+
+        .narrow { max-width: 560px; margin: 0 auto; }
+        .dash-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+        @media (min-width: 1024px) { .dash-grid { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; } .dash-grid .side { position: sticky; top: 76px; } }
+
+        .chart svg { display: block; width: 100%; height: auto; }
+        .legend { display: flex; gap: 12px; font-size: 12px; color: var(--ds-mute); }
+        .legend span { display: inline-flex; align-items: center; gap: 5px; }
+        .legend i { width: 10px; height: 10px; border-radius: 3px; background: color-mix(in srgb, var(--caf) 35%, transparent); }
+        .legend i.alc { height: 3px; border-radius: 2px; background: var(--ds-accent); }
+        .chart-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+
+        .group { margin-top: 14px; }
+        .group:first-of-type { margin-top: 0; }
+        .group > .ds-eyebrow { display: block; margin: 0 2px 6px; }
+        .when { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 40px; padding: 8px 12px; border: 0; border-radius: 10px; background: var(--ds-well); color: var(--ds-ink); font-size: 14px; font-weight: 600; }
+        .when .ds-ic { width: 16px; height: 16px; color: var(--ds-accent); }
+        .when .grow { flex: 1; text-align: left; }
+        .when .chev { color: var(--ds-mute); width: 14px; height: 14px; }
+        .when + .when { margin-top: 8px; }
+
+        .stat3 { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; padding: 12px 8px; }
+        .stat3 > div + div { border-left: 1px solid var(--ds-sep); }
+        .stat3 b { display: block; font-size: 18px; font-weight: 600; color: var(--ds-ink); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+        .stat3 small { font-size: 12px; color: var(--ds-mute); }
+        .day { margin-top: 12px; }
+        .day .ds-card-head { margin-bottom: 4px; }
+        .day .ds-card-head .ds-hint { font-variant-numeric: tabular-nums; }
+
+        .profile-top { display: flex; align-items: center; gap: 14px; }
+        .profile-top b { display: block; font-size: 17px; font-weight: 600; color: var(--ds-ink); }
+        .profile-top .ds-hint { font-size: 13px; }
+        .foot { margin-top: 2px; font-size: 12px; line-height: 1.5; color: var(--ds-mute); text-align: center; }
+    </style>
+</head>
+<body class="ds has-tabbar">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-beer" viewBox="0 0 24 24"><path d="M5 8.5h10V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M15 10.5h1.5a2.5 2.5 0 0 1 2.5 2.5v2a2.5 2.5 0 0 1-2.5 2.5H15"/><path d="M5 8.5A2.5 2.5 0 0 1 7.2 5a3 3 0 0 1 5.6 0A2.5 2.5 0 0 1 15 8.5"/><path d="M8.5 12v5.5M11.5 12v5.5"/></symbol>
+    <symbol id="i-wine" viewBox="0 0 24 24"><path d="M7.5 3h9s.5 2.6.5 4.5a5 5 0 0 1-10 0C7 5.6 7.5 3 7.5 3z"/><path d="M7.3 7.5h9.4M12 12.5V21M8.5 21h7"/></symbol>
+    <symbol id="i-sparkling" viewBox="0 0 24 24"><path d="M9.5 3h5l.5 7a3 3 0 0 1-6 0z"/><path d="M12 13v8M9 21h6M11.5 6.5v.01M13 8.5v.01"/></symbol>
+    <symbol id="i-cocktail" viewBox="0 0 24 24"><path d="M4 4h16l-8 9z"/><path d="M12 13v8M8 21h8M7 7.5h10M16 4l2.5-2"/></symbol>
+    <symbol id="i-shot" viewBox="0 0 24 24"><path d="M6 5h12l-1.4 13.2A2 2 0 0 1 14.6 20H9.4a2 2 0 0 1-2-1.8z"/><path d="M6.8 11h10.4"/></symbol>
+    <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5v2.5M12 3.5v2.5"/></symbol>
+    <symbol id="i-espresso" viewBox="0 0 24 24"><path d="M6 9h9v3.5a4.5 4.5 0 0 1-9 0z"/><path d="M15 10h1a2 2 0 0 1 0 4h-1.3M4 19.5h14M9 4.5v2M12 4.5v2"/></symbol>
+    <symbol id="i-glass" viewBox="0 0 24 24"><path d="M6 7h12l-1.5 12.2A2 2 0 0 1 14.5 21h-5a2 2 0 0 1-2-1.8z"/><path d="M13 7l2-4h3M6.7 12.5h10.6"/></symbol>
+    <symbol id="i-dots" viewBox="0 0 24 24"><path d="M5.5 12h.01M12 12h.01M18.5 12h.01" stroke-width="3.2"/></symbol>
+    <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3.5s-6 6.6-6 11a6 6 0 0 0 12 0c0-4.4-6-11-6-11z"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-food" viewBox="0 0 24 24"><path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2 1.5-3 4-3 7v4h3"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-rewind" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 4v4.5H8M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M4 16l5-6 4 3 7-8"/></symbol>
+    <symbol id="i-bars" viewBox="0 0 24 24"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8h.01"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10.5l5 5 5-5M4.5 19.5h15"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 0 1 4.8.8c0 1.7-2.4 2-2.4 3.7M12 17h.01"/></symbol>
+    <symbol id="i-glasses" viewBox="0 0 24 24"><path d="M5 4h6l-.6 6.2A2.5 2.5 0 0 1 7.9 12.5h0a2.5 2.5 0 0 1-2.5-2.3zM13 4h6l-.6 6.2a2.5 2.5 0 0 1-2.5 2.3h0a2.5 2.5 0 0 1-2.5-2.3zM8 12.5V20M16 12.5V20M6 20h4M14 20h4"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></symbol>
+</svg>
+
+<!-- Kopf: wie bisher, auf Handy UND Desktop oben fixiert -->
+<header class="ds-header">
+    <div class="ds-wrap ds-bar">
+        <img class="logo" src="../icon.svg" alt="">
+        <div class="head">
+            <h1>PegelTracker</h1>
+            <div class="sub">Promille &amp; Koffein im Blick</div>
+        </div>
+        <div class="ds-actions">
+            <button class="ds-icon-btn" data-theme type="button" aria-label="Design wechseln"><svg class="ds-ic"><use href="#i-moon"/></svg></button>
+            <div class="ds-me">
+                <button class="ds-icon-btn" id="meBtn" type="button" aria-label="Mein Konto" aria-expanded="false"><svg class="ds-ic"><use href="#i-person"/></svg></button>
+                <div class="ds-menu" id="meMenu" role="menu" hidden>
+                    <div class="ds-menu-head"><span class="ds-ava">S</span><div><b>Stefan</b><small>Admin</small></div></div>
+                    <a class="ds-item" href="/"><svg class="ds-ic"><use href="#i-home"/></svg>Dashboard</a>
+                    <a class="ds-item" href="#"><svg class="ds-ic"><use href="#i-gear"/></svg>Kontoeinstellungen</a>
+                    <a class="ds-item" href="#"><svg class="ds-ic"><use href="#i-shield"/></svg>Admin-Einstellungen<small>nur Admins</small></a>
+                    <div class="ds-sep"></div>
+                    <button class="ds-item danger" type="button"><svg class="ds-ic"><use href="#i-logout"/></svg>Abmelden</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="ds-wrap">
+<main id="app" data-view="dash">
+    <!-- Desktop-Navigation wie bisher (iOS-Segmente). Auf dem Handy übernimmt die Tab-Leiste unten. -->
+    <nav class="ds-seg ds-tabs ds-desktop-only" aria-label="Bereiche">
+        <button data-go="add" type="button"><svg class="ds-ic"><use href="#i-plus"/></svg>Eintragen</button>
+        <button data-go="dash" type="button"><svg class="ds-ic"><use href="#i-chart"/></svg>Dashboard</button>
+        <button data-go="hist" type="button"><svg class="ds-ic"><use href="#i-cal"/></svg>Historie</button>
+    </nav>
+
+    <div class="draft-flag"><svg class="ds-ic"><use href="#i-info"/></svg>Entwurf mit Beispieldaten, es wird nichts gespeichert.</div>
+
+    <!-- ───────── Dashboard ───────── -->
+    <section data-v="dash">
+        <div class="dash-grid">
+            <div class="ds-stack">
+                <!-- Koffein links, Alkohol rechts -->
+                <div class="ds-tiles">
+                    <div class="ds-tile caf">
+                        <span class="lbl"><svg class="ds-ic"><use href="#i-coffee"/></svg>Koffein aktiv</span>
+                        <div class="val">87<small>mg</small></div>
+                        <div class="ds-meter"><i style="width:22%"></i></div>
+                        <div class="foot"><span>in 6 h ≈ 30 mg</span><span class="ds-pill ok">mittel</span></div>
+                    </div>
+                    <div class="ds-tile">
+                        <span class="lbl"><svg class="ds-ic"><use href="#i-glass"/></svg>Aktueller Pegel</span>
+                        <div class="val">0,42<small>‰</small></div>
+                        <div class="ds-meter"><i style="width:38%"></i></div>
+                        <div class="foot"><span>nüchtern ≈ 23:40</span><span class="ds-pill warn">ab 0,3 ‰</span></div>
+                    </div>
+                </div>
+
+                <div class="ds-card">
+                    <div class="ds-card-head">
+                        <span class="ds-badge"><svg class="ds-ic"><use href="#i-chart"/></svg></span><h3>Verlauf</h3>
+                        <div class="ds-chips">
+                            <button class="ds-chip" aria-selected="false" type="button">6 h</button>
+                            <button class="ds-chip" aria-selected="true" type="button">24 h</button>
+                        </div>
+                    </div>
+                    <div class="chart">
+                        <svg viewBox="0 0 340 150" role="img" aria-label="Verlauf der letzten 24 Stunden">
+                            <defs><linearGradient id="gc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--caf)" stop-opacity=".35"/><stop offset="1" stop-color="var(--caf)" stop-opacity=".08"/></linearGradient></defs>
+                            <g stroke="var(--ds-sep)" stroke-width="1"><line x1="34" y1="14" x2="306" y2="14"/><line x1="34" y1="64" x2="306" y2="64"/><line x1="34" y1="114" x2="306" y2="114"/></g>
+                            <g fill="var(--ds-mute)" font-size="10" font-family="var(--ds-font)">
+                                <text x="0" y="18">200 mg</text><text x="6" y="68">100</text><text x="18" y="118">0</text>
+                                <text x="340" y="18" text-anchor="end">1,0 ‰</text><text x="340" y="68" text-anchor="end">0,5 ‰</text><text x="340" y="118" text-anchor="end">0 ‰</text>
+                                <text x="52" y="134">12:00</text><text x="140" y="134">18:00</text><text x="226" y="134">24:00</text><text x="276" y="134">06:00</text>
+                            </g>
+                            <path d="M34 62 C70 66 100 74 130 80 C170 88 200 96 240 104 C270 109 290 112 306 113 L306 114 L34 114Z" fill="url(#gc)"/>
+                            <path d="M34 114 L120 114 C150 114 160 62 190 52 C215 44 232 72 262 100 L306 114" fill="none" stroke="var(--ds-accent)" stroke-width="2.4" stroke-linecap="round"/>
+                            <line x1="214" y1="10" x2="214" y2="118" stroke="var(--ds-mute)" stroke-width="1" stroke-dasharray="3 3"/>
+                            <circle cx="214" cy="49" r="4" fill="var(--ds-accent)" stroke="var(--ds-card)" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="chart-foot"><div class="legend"><span><i></i>Koffein</span><span><i class="alc"></i>Promille</span></div><span class="ds-hint">Linie = jetzt</span></div>
+                </div>
+            </div>
+
+            <div class="ds-stack side">
+                <div class="ds-card">
+                    <div class="ds-card-head"><span class="ds-badge"><svg class="ds-ic"><use href="#i-plus"/></svg></span><h3>Nochmal</h3><span class="ds-hint">1× tippen = eintragen</span></div>
+                    <div class="ds-stories" id="stories"></div>
+                </div>
+                <div class="ds-card">
+                    <div class="ds-card-head"><span class="ds-badge"><svg class="ds-ic"><use href="#i-list"/></svg></span><h3>Diese Session</h3><span class="ds-hint" style="display:inline-flex;align-items:center;gap:6px"><span class="ds-live"></span>seit 19:24</span></div>
+                    <ul class="ds-list" id="sessionList"></ul>
+                </div>
+                <button class="ds-btn-main" data-go="add" type="button"><span class="m"><svg class="ds-ic"><use href="#i-plus"/></svg>Getränk eintragen</span></button>
+                <p class="foot">Schätzung nach Widmark/Watson. Nicht geeignet, um die Fahrtüchtigkeit zu beurteilen.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ───────── Eintragen ───────── -->
+    <section data-v="add" class="narrow">
+        <div class="ds-card">
+            <div class="ds-card-head"><span class="ds-badge"><svg class="ds-ic"><use href="#i-plus"/></svg></span><h3>Neuer Eintrag</h3></div>
+            <div class="group"><span class="ds-eyebrow">Getränk</span><div class="ds-picks" id="picks"></div></div>
+            <div class="group"><span class="ds-eyebrow">Menge</span><div class="ds-chips" id="amounts"></div></div>
+            <div class="group"><span class="ds-eyebrow">Zeitpunkt</span>
+                <div class="ds-chips scroll" id="times">
+                    <button class="ds-chip" aria-pressed="true" type="button">Jetzt</button>
+                    <button class="ds-chip" aria-pressed="false" type="button">vor 15 min</button>
+                    <button class="ds-chip" aria-pressed="false" type="button">vor 30 min</button>
+                    <button class="ds-chip" aria-pressed="false" type="button">vor 1 h</button>
+                    <button class="ds-chip" aria-pressed="false" type="button"><svg class="ds-ic"><use href="#i-clock"/></svg>Andere</button>
+                </div>
+            </div>
+            <label class="ds-toggle group"><span class="t"><svg class="ds-ic"><use href="#i-food"/></svg>Gute Essensgrundlage</span><span class="ds-switch"><input type="checkbox"><span></span></span></label>
+        </div>
+        <div class="ds-note" style="margin-top:14px"><svg class="ds-ic"><use href="#i-info"/></svg><span>Vergessen? Du kannst Getränke auch später <button data-go="bf" type="button">nachtragen</button>.</span></div>
+        <div class="ds-sticky-cta">
+            <button class="ds-btn-main" id="saveBtn" type="button" disabled><span class="m" id="saveMain">Erst Getränk auswählen</span><span class="s" id="saveSub" hidden></span></button>
+        </div>
+    </section>
+
+    <!-- ───────── Historie + Nachtragen ───────── -->
+    <div class="hist-grid">
+        <section data-v="bf">
+            <div class="ds-card">
+                <div class="ds-card-head"><span class="ds-badge"><svg class="ds-ic"><use href="#i-rewind"/></svg></span><h3>Nachtragen</h3></div>
+                <div class="ds-seg" id="bfDay">
+                    <button aria-pressed="false" type="button">Heute</button>
+                    <button aria-pressed="true" type="button">Gestern</button>
+                    <button aria-pressed="false" type="button"><svg class="ds-ic"><use href="#i-cal"/></svg>Datum</button>
+                </div>
+                <div class="group">
+                    <button class="when" type="button"><svg class="ds-ic"><use href="#i-cal"/></svg><span class="grow">Montag, 09.11.2026</span><svg class="ds-ic chev"><use href="#i-right"/></svg></button>
+                    <button class="when" type="button"><svg class="ds-ic"><use href="#i-clock"/></svg><span class="grow">Erstes Getränk 20:00</span><span class="ds-hint">dann je +30 min</span><svg class="ds-ic chev"><use href="#i-right"/></svg></button>
+                </div>
+                <div class="group"><span class="ds-eyebrow">Getränke zählen</span><ul class="ds-list" id="bfList"></ul></div>
+                <div class="ds-sticky-cta" style="margin-bottom:-16px;border-radius:0 0 var(--ds-radius) var(--ds-radius);background:linear-gradient(to bottom, transparent, var(--ds-card) 40%)">
+                    <button class="ds-btn-main" id="bfSave" type="button" disabled><span class="m">Erst Getränke zählen</span></button>
+                </div>
+            </div>
+        </section>
+
+        <section data-v="hist">
+            <div class="ds-card stat3">
+                <div><b>9</b><small>Getränke (7 Tage)</small></div>
+                <div><b>3</b><small>alkoholfreie Tage</small></div>
+                <div><b>1,1 ‰</b><small>Höchstwert</small></div>
+            </div>
+            <div class="ds-chips scroll" style="margin:14px 2px 0">
+                <button class="ds-chip" aria-selected="true" type="button">7 Tage</button>
+                <button class="ds-chip" aria-selected="false" type="button">Monat</button>
+                <button class="ds-chip" aria-selected="false" type="button">3 Monate</button>
+                <button class="ds-chip" aria-selected="false" type="button">Jahr</button>
+                <button class="ds-chip" aria-selected="false" type="button">Alle</button>
+            </div>
+            <div id="histList"></div>
+        </section>
+    </div>
+
+    <!-- ───────── Profil (nur Handy; am Desktop bleibt das Kontomenü oben rechts) ───────── -->
+    <section data-v="profile" class="narrow">
+        <div class="ds-stack">
+            <div class="ds-card profile-top"><span class="ds-ava xl">S</span><div><b>Stefan</b><div class="ds-hint">PegelTracker · Admin</div></div></div>
+            <div class="ds-card" style="padding:6px">
+                <button class="ds-item" type="button"><svg class="ds-ic"><use href="#i-bars"/></svg><span class="grow">Statistiken</span><svg class="ds-ic chev"><use href="#i-right"/></svg></button>
+                <button class="ds-item" type="button"><svg class="ds-ic"><use href="#i-glasses"/></svg><span class="grow">Eigene Getränke</span><svg class="ds-ic chev"><use href="#i-right"/></svg></button>
+                <label class="ds-item" style="cursor:pointer"><svg class="ds-ic"><use href="#i-moon"/></svg><span class="grow">Dunkles Design</span><span class="ds-switch"><input type="checkbox" id="darkSw"><span></span></span></label>
+                <div class="ds-sep"></div>
+                <a class="ds-item" href="/"><svg class="ds-ic"><use href="#i-home"/></svg><span class="grow">Dashboard (alle Apps)</span><svg class="ds-ic chev"><use href="#i-right"/></svg></a>
+                <a class="ds-item" href="#"><svg class="ds-ic"><use href="#i-gear"/></svg><span class="grow">Kontoeinstellungen</span><svg class="ds-ic chev"><use href="#i-right"/></svg></a>
+                <a class="ds-item" href="#"><svg class="ds-ic"><use href="#i-shield"/></svg><span class="grow">Admin-Einstellungen</span><svg class="ds-ic chev"><use href="#i-right"/></svg></a>
+                <div class="ds-sep"></div>
+                <button class="ds-item danger" type="button"><svg class="ds-ic"><use href="#i-logout"/></svg><span class="grow">Abmelden</span></button>
+            </div>
+        </div>
+    </section>
+</main>
+</div>
+
+<!-- Tab-Leiste unten: nur Handy (Media Query in ui-kit.css) -->
+<nav class="ds-tabbar" aria-label="Navigation">
+    <button data-go="dash" type="button"><svg class="ds-ic"><use href="#i-home"/></svg>Start</button>
+    <button data-go="bf" type="button"><svg class="ds-ic"><use href="#i-rewind"/></svg>Nachtragen</button>
+    <button data-go="add" class="ds-tab-new" type="button" aria-label="Getränk eintragen"><span class="fab"><svg class="ds-ic"><use href="#i-plus"/></svg></span></button>
+    <button data-go="hist" type="button"><svg class="ds-ic"><use href="#i-cal"/></svg>Historie</button>
+    <button data-go="profile" type="button"><span class="ds-ava">S</span>Profil</button>
+</nav>
+
+<div class="ds-toast" id="toast" role="status"><svg class="ds-ic"><use href="#i-check"/></svg><span id="toastText"></span><button id="toastUndo" type="button">Rückgängig</button></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const ic = (id, cls = '') => `<svg class="ds-ic ${cls}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+
+/* Beispieldaten. Koffein steht immer vor Alkohol (links/oben). */
+const DRINKS = [
+    { id: 'coffee', name: 'Kaffee', icon: 'coffee', amounts: ['1 Tasse', '1 Becher', '2 Tassen'], def: 0, caf: true, delta: ['+80 mg', '+120 mg', '+160 mg'] },
+    { id: 'espresso', name: 'Espresso', icon: 'espresso', amounts: ['einfach', 'doppelt'], def: 0, caf: true, delta: ['+60 mg', '+120 mg'] },
+    { id: 'energy', name: 'Energy', icon: 'bolt', amounts: ['0,25 l', '0,5 l'], def: 0, caf: true, delta: ['+80 mg', '+160 mg'] },
+    { id: 'beer', name: 'Bier', icon: 'beer', amounts: ['0,33 l', '0,5 l', '1 l'], def: 1, caf: false, delta: ['+0,14 ‰', '+0,21 ‰', '+0,42 ‰'] },
+    { id: 'wine', name: 'Wein', icon: 'wine', amounts: ['0,1 l', '0,2 l', '0,25 l'], def: 1, caf: false, delta: ['+0,11 ‰', '+0,22 ‰', '+0,27 ‰'] },
+    { id: 'sparkling', name: 'Sekt', icon: 'sparkling', amounts: ['0,1 l', '0,2 l'], def: 0, caf: false, delta: ['+0,10 ‰', '+0,20 ‰'] },
+    { id: 'cocktail', name: 'Cocktail', icon: 'cocktail', amounts: ['0,2 l', '0,3 l', '0,4 l'], def: 1, caf: false, delta: ['+0,15 ‰', '+0,23 ‰', '+0,30 ‰'] },
+    { id: 'shot', name: 'Shot', icon: 'shot', amounts: ['2 cl', '4 cl'], def: 0, caf: false, delta: ['+0,08 ‰', '+0,16 ‰'] },
+    { id: 'other', name: 'Weitere', icon: 'dots', amounts: ['Liste / manuell'], def: 0, caf: false, delta: [''] },
+];
+const D = Object.fromEntries(DRINKS.map(d => [d.id, d]));
+const SESSION = [['beer', '0,5 l', '20:17'], ['espresso', 'einfach', '19:45'], ['wine', '0,2 l', '19:24']];
+const STORIES = [['espresso', 'einfach'], ['coffee', '1 Tasse'], ['beer', '0,5 l'], ['wine', '0,2 l'], ['cocktail', '0,3 l']];
+const HIST = [
+    ['Samstag, 07.11.', '4 Getränke · max. 1,1 ‰', [['coffee', '1 Tasse', '17:30'], ['beer', '0,5 l', '20:30'], ['wine', '0,2 l', '21:45'], ['beer', '0,5 l', '22:17']]],
+    ['Freitag, 06.11.', '3 Getränke · max. 0,6 ‰', [['wine', '0,1 l', '14:05'], ['beer', '0,5 l', '16:20'], ['espresso', 'einfach', '19:12']]],
+    ['Donnerstag, 05.11.', '2 Getränke · nur Koffein', [['espresso', 'doppelt', '08:47'], ['coffee', '1 Tasse', '15:12']]],
+];
+const thumb = d => `<span class="ds-thumb ${D[d].caf ? 'caf' : ''}">${ic(D[d].icon)}</span>`;
+const row = ([d, amt, t], end) => `<li>${thumb(d)}<span class="main"><b>${D[d].name}</b><small>${amt}</small></span><span class="end">${t}</span>${end}</li>`;
+
+$('#sessionList').innerHTML = SESSION.map(r => row(r, `<button class="ds-icon-btn plain" type="button" aria-label="Optionen">${ic('dots')}</button>`)).join('');
+$('#stories').innerHTML = STORIES.map(([d, a]) => `<button class="ds-story ${D[d].caf ? 'caf' : ''}" type="button" data-quick="${d}|${a}"><span class="ring"><span>${ic(D[d].icon)}</span></span>${D[d].name}<small>${a}</small></button>`).join('')
+    + `<button class="ds-story add" type="button" data-go="add"><span class="ring"><span>${ic('plus')}</span></span>Andere</button>`;
+$('#histList').innerHTML = HIST.map(([day, meta, rows]) => `<div class="ds-card day"><div class="ds-card-head"><h3>${day}</h3><span class="ds-hint">${meta}</span></div>
+    <ul class="ds-list">${rows.map(r => row(r, ic('right', 'chev'))).join('')}</ul></div>`).join('');
+
+/* Eintragen */
+let sel = null, amt = 0;
+$('#picks').innerHTML = DRINKS.map(d => `<button class="ds-pick ${d.caf ? 'caf' : ''}" type="button" data-pick="${d.id}" aria-pressed="false">${ic(d.icon)}${d.name}</button>`).join('');
+function renderAdd() {
+    document.querySelectorAll('[data-pick]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pick === sel));
+    const d = D[sel];
+    $('#amounts').innerHTML = (d ? d.amounts : ['Erst Getränk wählen']).map((a, i) => `<button class="ds-chip" type="button" data-amt="${i}" aria-pressed="${!!d && i === amt}" ${d ? '' : 'disabled'}>${a}</button>`).join('');
+    $('#saveBtn').disabled = !d;
+    $('#saveMain').innerHTML = d ? `${ic('plus')}${d.name} eintragen` : 'Erst Getränk auswählen';
+    $('#saveSub').hidden = !d;
+    if (d) $('#saveSub').textContent = `${d.amounts[amt]} · jetzt · ca. ${d.delta[amt]}`;
+}
+renderAdd();
+$('#saveBtn').onclick = () => { const d = D[sel]; toast(`${d.name} ${d.amounts[amt]} eingetragen`); sel = null; renderAdd(); go('dash'); };
+
+/* Nachtragen: Zähler pro Getränk (Koffein zuerst) */
+const bf = { coffee: 0, espresso: 0, beer: 2, wine: 1, cocktail: 0, shot: 0 };
+const bfAmt = { coffee: '1 Tasse', espresso: 'einfach', beer: '0,5 l', wine: '0,2 l', cocktail: '0,3 l', shot: '2 cl' };
+function renderBf() {
+    $('#bfList').innerHTML = Object.keys(bf).map(d => `<li>${thumb(d)}<span class="main"><b>${D[d].name}</b><small>${bfAmt[d]}</small></span>
+        <span class="ds-stepper"><button type="button" data-bf="${d}|-1" aria-label="${D[d].name} weniger" ${bf[d] ? '' : 'disabled'}>${ic('minus')}</button><output>${bf[d]}</output>
+        <button type="button" class="plus" data-bf="${d}|1" aria-label="${D[d].name} mehr">${ic('plus')}</button></span></li>`).join('');
+    const n = Object.values(bf).reduce((a, b) => a + b, 0);
+    $('#bfSave').disabled = !n;
+    $('#bfSave').innerHTML = `<span class="m">${n ? `${ic('check')}${n} ${n === 1 ? 'Getränk' : 'Getränke'} nachtragen` : 'Erst Getränke zählen'}</span>`;
+}
+renderBf();
+$('#bfSave').onclick = () => { toast($('#bfSave').textContent.trim().replace('nachtragen', 'nachgetragen')); Object.keys(bf).forEach(k => bf[k] = 0); renderBf(); };
+
+document.addEventListener('click', e => {
+    const t = e.target;
+    const p = t.closest('[data-pick]'); if (p) { sel = p.dataset.pick; amt = D[sel].def; renderAdd(); }
+    const a = t.closest('[data-amt]'); if (a) { amt = +a.dataset.amt; renderAdd(); }
+    const b = t.closest('[data-bf]'); if (b) { const [d, s] = b.dataset.bf.split('|'); bf[d] = Math.max(0, bf[d] + +s); renderBf(); }
+    const c = t.closest('#times .ds-chip, #bfDay button, .ds-card-head .ds-chip, [data-v="hist"] .ds-chip');
+    if (c) c.parentElement.querySelectorAll('button').forEach(x => x.setAttribute(x.hasAttribute('aria-selected') ? 'aria-selected' : 'aria-pressed', x === c));
+    const q = t.closest('[data-quick]'); if (q) { const [d, x] = q.dataset.quick.split('|'); toast(`${D[d].name} ${x} eingetragen`); }
+    const g = t.closest('[data-go]'); if (g) go(g.dataset.go);
+    if (t.closest('[data-theme]')) setDark(!document.documentElement.classList.contains('dark'));
+    if (!t.closest('.ds-me')) { $('#meMenu').hidden = true; $('#meBtn').setAttribute('aria-expanded', 'false'); }
+});
+
+/* Navigation: Handy = Tab-Leiste unten, Desktop = Segmente oben (wie bisher) */
+const mobile = matchMedia('(max-width: 767.98px)');
+const VIEWS = ['dash', 'add', 'hist', 'bf', 'profile'];
+let view = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'dash';
+function go(v) {
+    view = v;
+    const shown = !mobile.matches && v === 'profile' ? 'dash' : v;
+    $('#app').dataset.view = shown;
+    const navKey = !mobile.matches && shown === 'bf' ? 'hist' : shown;
+    document.querySelectorAll('.ds-tabs [data-go], .ds-tabbar [data-go]').forEach(b => {
+        if (b.dataset.go === navKey) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+    history.replaceState(null, '', '#' + v);
+    window.scrollTo(0, 0);
+}
+mobile.addEventListener('change', () => go(view));
+go(view);
+
+$('#meBtn').onclick = () => { const m = $('#meMenu'); m.hidden = !m.hidden; $('#meBtn').setAttribute('aria-expanded', String(!m.hidden)); };
+
+/* Dunkles Design (gleicher Schlüssel wie alle Apps) */
+function setDark(on) {
+    document.documentElement.classList.toggle('dark', on);
+    try { localStorage.setItem('overall-theme', on ? 'dark' : 'light'); } catch (e) {}
+    $('#darkSw').checked = on;
+    document.querySelector('[data-theme] use').setAttribute('href', on ? '#i-sun' : '#i-moon');
+}
+setDark(document.documentElement.classList.contains('dark'));
+$('#darkSw').onchange = e => setDark(e.target.checked);
+
+/* Snackbar mit Rückgängig */
+let tt;
+function toast(msg) { $('#toastText').textContent = msg; $('#toast').classList.add('show'); clearTimeout(tt); tt = setTimeout(() => $('#toast').classList.remove('show'), 4000); }
+$('#toastUndo').onclick = () => $('#toast').classList.remove('show');
+</script>
+</body>
+</html>
