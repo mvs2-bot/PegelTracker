@@ -1078,7 +1078,7 @@ async function addDrink(d) {
     try {
         await insertDrink(d, +new Date($('#entryTime').value || Date.now()), $('#foodToggle').checked);
         flash(`${d.name} eingetragen.`);
-        $('#entryTime').value = localInput(Date.now()); entryTimeTouched = false;
+        /* Datum und Uhrzeit bleiben wie eingestellt; ungeänderte Zeit läuft weiter mit „jetzt“ */
         clearPick();
         recompute(); render();
         return true;
@@ -1531,7 +1531,7 @@ $('#manualForm').onsubmit = async e => {
 };
 
 /* ═════════ Nachtragen (Historie) ═════════
-   Tag einmal wählen, Getränk auswählen, mit „Hinzufügen“ eintragen. Der Zeitpunkt rückt danach um BF_GAP weiter. */
+   Tag einmal wählen, Getränk auswählen, mit „Hinzufügen“ eintragen. Der Zeitpunkt bleibt danach wie eingestellt. */
 const BF_GAP = 30 * MIN;
 const BF = { day: null, t: null, busy: false, scrolledFor: null, pick: null };
 const dayStart = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return +d; };
@@ -1583,7 +1583,7 @@ async function bfAdd(d) {
     const at = BF.t;
     try {
         await insertDrink(d, at, $('#bfFood').checked);
-        BF.t = at + BF_GAP; BF.pick = null; $('#bfSel').value = '';
+        BF.pick = null; $('#bfSel').value = '';
         bfMsg(`${d.name} am ${fmtDayShort(at)} um ${fmtTime(at)} Uhr eingetragen.`);
     } catch (e) { bfMsg(errorText(e), false); }
     BF.busy = false;
