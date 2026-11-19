@@ -44,7 +44,8 @@ Die Datenbank setzt das selbst durch (Row Level Security), nicht nur die Oberfl�
 
 ## Berechnung
 
-- **Alkohol:** Widmark-Formel mit Körperwasser nach Watson (Geschlecht, Alter, Größe, Gewicht):
+- **Alkohol:** Widmark-Formel mit Körperwasser. Ist im Profil der Körperfettanteil eingetragen (optional, z. B. von einer
+  Körperfettwaage), gilt Körperwasser = 0,73 · fettfreie Masse; nur Muskelanteil: fettfreie Masse ≈ Muskel / 0,5; sonst Schätzung nach Watson (Geschlecht, Alter, Größe, Gewicht):
   `‰ = Gramm Alkohol · 0,8 / (1,055 · Körperwasser)`.
   Resorption erster Ordnung (Halbwertszeit ca. 10 min nüchtern, ca. 40 min mit Essensgrundlage),
   Resorptionsdefizit 10 % bzw. 25 %. Mit Essen steigt der Pegel dadurch langsamer und erreicht ein niedrigeres,

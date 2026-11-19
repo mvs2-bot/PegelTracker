@@ -13,7 +13,7 @@ Kein Build, kein npm: reines HTML/CSS/JS, Bibliotheken per CDN. Sprache in UI, K
 | Datei | Inhalt |
 | --- | --- |
 | `index.html` | komplette App: CSS (Z. ~20–475), Markup/Views (~480–825), Skript (~826–Ende) |
-| `sw.js` | Service Worker. **Bei jeder Änderung an gecachten Dateien `V` (z. B. `pegeltracker-v29`) hochzählen.** |
+| `sw.js` | Service Worker. **Bei jeder Änderung an gecachten Dateien `V` (z. B. `pegeltracker-v30`) hochzählen.** |
 | `manifest.json`, `icon.svg`, `icons/` | PWA-Icons und Manifest |
 | `shared/ios-nav.js` | Kopie aus `mvs2-bot.github.io/shared/` (Zurück/Neu-laden-Leiste für iOS-Web-App). Nur im Original ändern. |
 | `shared/ui-kit.css`, `shared/UI-KIT.md` | neues UI-Kit (Entwurf v1, Klassen `.ds-*`), noch nicht in `index.html` übernommen |
@@ -26,7 +26,7 @@ Kein Build, kein npm: reines HTML/CSS/JS, Bibliotheken per CDN. Sprache in UI, K
 - Theme: Inline-Skript im `<head>` setzt `.dark` an `<html>` aus `localStorage['overall-theme']`; `applyTheme(dark, save)`.
 - Zustand im Objekt `S` (`user`, `role`, `people`, `viewId`, `drinks`, `custom`, …); `render()` zeichnet alles neu, `recompute()` rechnet Sessions.
 - Hilfen: `$()` Selektor, `check(res)` wirft bei Supabase-Fehler, `withTimeout(p, ms)`, `flash(text, ok)`, `banner(html)`, `errorText(e)`.
-- Rechenmodell: Konstanten in `MODEL`; `bodyModel`, `simulate`, `buildSessions`, `zeroTime`, `cafEndTime`, `milestoneTime`.
+- Rechenmodell: Konstanten in `MODEL`; `bodyModel` (Körperwasser 0,73 · fettfreie Masse aus `body_fat_pct` bzw. `muscle_pct`, sonst Watson), `simulate`, `buildSessions`, `zeroTime`, `cafEndTime`, `milestoneTime`.
 - Charts: Chart.js über `chartConfig()`, `renderLiveChart()`, `renderHistory()`.
 - Uhrzeit-Auswahl: eigenes Wheel-Picker-Widget (`mountWhen`).
 
@@ -39,7 +39,7 @@ Kein Build, kein npm: reines HTML/CSS/JS, Bibliotheken per CDN. Sprache in UI, K
   - `pegel_custom_drinks` (id, user_id, name, category, volume_ml, abv, caffeine_mg, created_at; unique `user_id,name`)
   - `category` ∈ beer, wine, sparkling, cocktail, shot, spirit, caffeine, other
 - RPCs: `overall_app_role('pegeltracker')`, `pegel_people()` (Admin-Umschalter), Helfer `pegel_is_member()`, `pegel_is_admin()`.
-- Global genutzt: `overall_profiles` (gender, birthday, height_cm, weight_kg, display_name, avatar_path), Storage-Bucket `avatars` (signierte URLs).
+- Global genutzt: `overall_profiles` (gender, birthday, height_cm, weight_kg, optional `body_fat_pct`, `muscle_pct` über `pegel_people()`, display_name, avatar_path), Storage-Bucket `avatars` (signierte URLs).
 - Rollen: Mitglied = nur eigene Getränke; Admin = zusätzlich Mitglieder lesen. Durchgesetzt per RLS, nicht nur UI.
 - Sessions werden aus Getränken berechnet, nicht gespeichert.
 
