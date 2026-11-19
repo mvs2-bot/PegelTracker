@@ -315,7 +315,8 @@
         .pstats b { display: block; font-size: 20px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
         .pstats span { font-size: 12px; color: var(--mute); }
         .body-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
-        .body-grid .btn { grid-column: 1 / -1; }
+        .body-grid .btn, .body-grid .wide { grid-column: 1 / -1; }
+        .body-grid [hidden] { display: none; }
         .body-grid .inp { min-height: 40px; }
         .cust .txt input { width: 100%; min-height: 34px; padding: 4px 8px; border: 0; border-radius: 8px; background: var(--well); color: var(--ink); font-size: 16px; font-weight: 600; }
         .cust .row-btn.danger:hover { color: var(--danger); }
@@ -636,7 +637,7 @@
                     </form>
                 </details>
                 <div id="entryMsg" class="msg" hidden></div>
-                <p class="foot">Schätzung nach Widmark/Watson. Nicht geeignet, um die Fahrtüchtigkeit zu beurteilen.</p>
+                <p class="foot">Schätzung nach Widmark (Körperwasser aus Körperfett oder nach Watson). Nicht geeignet, um die Fahrtüchtigkeit zu beurteilen.</p>
             </div>
             <div id="readonlyCard" class="card ro" hidden><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg><span>Du siehst den Bereich von <b id="roName"></b>. Einträge kann nur die Person selbst machen.</span></div>
         </section>
@@ -759,6 +760,7 @@
                         <label class="lbl">Geburtsdatum<input id="bBirth" class="inp" type="date" min="1900-01-01"></label>
                         <label class="lbl">Größe (cm)<input id="bHeight" class="inp" type="number" min="50" max="250" step="1" inputmode="numeric"></label>
                         <label class="lbl">Gewicht (kg)<input id="bWeight" class="inp" type="number" min="20" max="300" step="0.1" inputmode="decimal"></label>
+                        <label id="bFatRow" class="lbl wide" hidden>Körperfett (%, optional)<input id="bFat" class="inp" type="number" min="3" max="70" step="0.1" inputmode="decimal" placeholder="leer = Schätzung"></label>
                         <button id="bodySave" class="btn" type="submit">Speichern</button>
                     </form>
                     <div id="bodyMsg" class="msg" hidden></div>
@@ -833,7 +835,8 @@ const PT_CONFIG = {
 };
 
 /* ═════════ Berechnung ═════════
-   Alkohol: Widmark mit Körperwasser nach Watson (Geschlecht, Alter, Größe, Gewicht).
+   Alkohol: Widmark mit Körperwasser. Mit Körperfettanteil: Körperwasser = 0,73 · fettfreie Masse
+     (Wassergehalt fettfreier Masse ~73 %, Pace & Rathbun 1945). Ohne: Schätzung nach Watson (Geschlecht, Alter, Größe, Gewicht).
      c(‰) = A(g) · 0,8 / (1,055 · Körperwasser)
    Resorption: erster Ordnung (Anteil im Magen-Darm sinkt exponentiell mit ka). Mit Essen bleibt der Alkohol
      länger im Magen (kleineres ka, Maximum später und niedriger) und das Resorptionsdefizit ist größer
@@ -848,6 +851,7 @@ const MODEL = {
     deficit: { empty: 0.10, food: 0.25 }, /* Resorptionsdefizit */
     zeroBelow: 0.005,                     /* ab hier gilt 0,00 ‰ */
     ethanolDensity: 0.789,                /* g/ml */
+    ffmWater: 0.73,                       /* Wasseranteil der fettfreien Masse */
     cafKa: 4.0,                           /* Aufnahme 1/h */
     cafHalfLifeH: 5,
     cafZero: 40,                          /* mg, darunter gilt Koffein als abgeklungen (Session-Ende); gleiche Grenze wie „gering“ */
@@ -967,8 +971,10 @@ function bodyModel(p) {
     let age = p && ageFrom(p.birthday); if (age == null) { missing.push('Geburtsdatum'); age = 30; }
     const male = 2.447 - 0.09516 * age + 0.1074 * h + 0.3362 * w;
     const female = -2.097 + 0.1069 * h + 0.2466 * w;
-    const tbw = sex === 'female' ? female : sex === 'male' ? male : (male + female) / 2;
-    return { perGram: 0.8 / (1.055 * tbw), tbw, w, h, age, sex, missing };
+    const fat = p && +p.body_fat_pct;   /* optional, z. B. von einer Körperfettwaage */
+    const tbw = fat > 0 ? MODEL.ffmWater * w * (1 - fat / 100)
+        : sex === 'female' ? female : sex === 'male' ? male : (male + female) / 2;
+    return { perGram: 0.8 / (1.055 * tbw), tbw, w, h, age, sex, fat: fat > 0 ? fat : null, missing };
 }
 
 /* Verlauf für eine Menge Getränke: [{t, bac, caf}] von from bis to.
@@ -1736,6 +1742,8 @@ function renderProfile() {
         const p = meP();
         $('#bSex').value = p.gender || ''; $('#bBirth').value = p.birthday || '';
         $('#bHeight').value = p.height_cm ?? ''; $('#bWeight').value = p.weight_kg ?? '';
+        /* Feld erst zeigen, wenn pegel_people() die Spalte liefert (Migration eingespielt) */
+        $('#bFatRow').hidden = !('body_fat_pct' in p); $('#bFat').value = p.body_fat_pct ?? '';
         $('#bBirth').max = localInput(Date.now()).slice(0, 10);
     }
     if (custEdit == null) renderCustom();   /* Umbenennen nicht durch die minütliche Aktualisierung abbrechen */
@@ -1799,9 +1807,12 @@ $('#bodyForm').onsubmit = async e => {
     if (fields.birthday && fields.birthday > localInput(Date.now()).slice(0, 10)) return profMsg('#bodyMsg', 'Das Geburtsdatum darf nicht in der Zukunft liegen.');
     if (fields.height_cm != null && (fields.height_cm < 50 || fields.height_cm > 250)) return profMsg('#bodyMsg', 'Die Größe muss zwischen 50 und 250 cm liegen.');
     if (fields.weight_kg != null && (fields.weight_kg < 20 || fields.weight_kg > 300)) return profMsg('#bodyMsg', 'Das Gewicht muss zwischen 20 und 300 kg liegen.');
+    const hasFat = !$('#bFatRow').hidden;
+    if (hasFat) fields.body_fat_pct = num('#bFat');
+    if (fields.body_fat_pct != null && (fields.body_fat_pct < 3 || fields.body_fat_pct > 70)) return profMsg('#bodyMsg', 'Der Körperfettanteil muss zwischen 3 und 70 % liegen.');
     const b = $('#bodySave'); b.disabled = true; profMsg('#bodyMsg', '');
     try {
-        const row = check(await sb.from('overall_profiles').update(fields).eq('id', S.user.id).select('gender, birthday, height_cm, weight_kg').single());
+        const row = check(await sb.from('overall_profiles').update(fields).eq('id', S.user.id).select('gender, birthday, height_cm, weight_kg' + (hasFat ? ', body_fat_pct' : '')).single());
         Object.assign(meP(), row);
         cacheSet('people_' + S.user.id, { role: S.role, people: S.people });
         recompute(); render(); renderProfile();
