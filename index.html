@@ -114,6 +114,7 @@
         .dark .seg button[aria-selected="true"] { background: #636366; }
         .seg .ic { width: 15px; height: 15px; }
         .tabs { max-width: 540px; margin: 8px auto 18px; }
+        @media (hover: hover) and (min-width: 768px) { .seg button[aria-selected="false"]:hover { background: color-mix(in srgb, var(--card) 55%, transparent); } }
 
         /* Hinweisleiste */
         .banner { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 14px; padding: 12px 14px; border-radius: var(--radius-s); background: var(--warn-soft); color: var(--ink); font-size: 13px; }
@@ -132,15 +133,20 @@
         .badge-ic.caf { background: var(--caf-soft); color: var(--caf); }
         .eyebrow { font-size: 12px; font-weight: 500; color: var(--mute); }
         .hint { font-size: 12px; color: var(--mute); }
-        .cols { display: grid; gap: 14px; }
         .dash-date { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 4px; }
         .dash-date span { font-size: 15px; font-weight: 600; color: var(--ink); }
         .dash-date b { font-size: 15px; font-weight: 600; color: var(--mute); font-variant-numeric: tabular-nums; }
         .col { display: grid; gap: 14px; align-content: start; min-width: 0; }
+        /* Desktop (ab 1024 px): Dashboard zweispaltig, links Pegel + Verlauf, rechts Meilensteine + Session */
         @media (min-width: 1024px) {
-            .cols { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; }
-            .col { gap: 16px; }
-            .col.side > .card { position: sticky; top: 76px; }
+            #dashView > .col { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); grid-template-areas: "date date" "now ms" "chart list"; gap: 16px; align-items: start; }
+            #dashView .dash-date { grid-area: date; }
+            #dashView .d-now { grid-area: now; align-self: stretch; display: flex; flex-direction: column; justify-content: space-between; }
+            #dashView .d-ms { grid-area: ms; align-self: stretch; }
+            #dashView .d-chart { grid-area: chart; }
+            #dashView .d-list { grid-area: list; }
+            #dashView .ms-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            #dashView .chart { height: 300px; }
         }
 
         /* Aktueller Pegel */
@@ -362,6 +368,12 @@
         .chip.caf[aria-pressed="true"] { box-shadow: inset 0 0 0 1.5px var(--caf); }
 
         /* Nachtragen */
+        /* Desktop: Nachtragen zweispaltig, die Liste des Tages bleibt rechts sichtbar */
+        @media (min-width: 1024px) {
+            #bfView { max-width: none; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+            #bfDayCard { position: sticky; top: 76px; }
+            #bfRo { grid-column: 1 / -1; }
+        }
         .bf { display: block; margin-bottom: 12px; scroll-margin-top: 80px; }
         .bf summary { margin-bottom: 0; list-style: none; cursor: pointer; }
         .bf summary::-webkit-details-marker { display: none; }
@@ -393,6 +405,7 @@
         /* Historie */
         .hist { display: grid; gap: 12px; }
         @media (min-width: 640px) { .hist { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (min-width: 1024px) { .hist { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
         .hcard { display: block; width: 100%; border: 0; text-align: left; color: var(--text); transition: background .15s; }
         .hcard:hover { background: color-mix(in srgb, var(--card) 70%, var(--hover)); }
         .hcard .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
@@ -649,7 +662,7 @@
                 <!-- heute: Wochentag, Datum, Uhrzeit -->
                 <div class="dash-date"><span id="dashDay"></span><b id="dashClock"></b></div>
                 <!-- aktueller Stand -->
-                <div class="card">
+                <div class="card d-now">
                     <div class="now-top">
                         <div>
                             <div class="eyebrow">Aktueller Pegel</div>
@@ -677,13 +690,13 @@
                 </div>
 
                 <!-- Meilensteine -->
-                <div class="card">
+                <div class="card d-ms">
                     <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-timer"/></svg></span><h3>Meilensteine</h3></div>
                     <div id="milestones" class="ms-grid"></div>
                 </div>
 
                 <!-- Chart -->
-                <div class="card">
+                <div class="card d-chart">
                     <div class="card-head">
                         <span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg></span><h3>Verlauf</h3>
                         <div class="legend"><span><i></i>Promille</span><span><i class="caf"></i>Koffein</span></div>
@@ -693,7 +706,7 @@
                 </div>
 
                 <!-- Getränke der Session -->
-                <div class="card">
+                <div class="card d-list">
                     <div class="card-head"><span class="badge-ic"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg></span><h3>Diese Session</h3></div>
                     <ul id="sessionList" class="drinks"></ul>
                 </div>
